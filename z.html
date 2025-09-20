@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="ro">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="application-name" content="Grădiniță">
+<meta name="apple-mobile-web-app-title" content="Grădiniță">
+<meta name="theme-color" content="#3498db">
+<meta name="msapplication-navbutton-color" content="#3498db">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="msapplication-starturl" content="/index.html">
+
+<link rel="icon" type="image/png" sizes="192x192" href="https://via.placeholder.com/192.png?text=G">
+<link rel="apple-touch-icon" type="image/png" sizes="192x192" href="https://via.placeholder.com/192.png?text=G">
+
+<link rel="manifest" href="/manifest.json">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<head>
+<title>Prezență Grădiniță</title>
+
+<style>
+/* --- Layout general --- */
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  margin: 0;
+  padding: 0;
+  background: #f0f4f7;
+  color: #333;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+}
+
+/* Container central care încadră tot conținutul */
+.container {
+  max-width: 1100px;
+  width: 95%;
+  background: #fff;
+  margin: 20px;
+  padding: 24px;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+}
+
+/* Titlu */
+h1 {
+  text-align: center;
+  color: #2c3e50;
+  margin-top: 0;
+  font-size: 2.2em;
+}
+h2 {
+    font-size: 1.4em;
+    color: #34495e;
+    border-bottom: 2px solid #ecf0f1;
+    padding-bottom: 8px;
+    margin-top: 24px;
+}
+
+/* Butoane */
+button {
+  padding: 10px 18px;
+  margin: 6px 4px;
+  cursor: pointer;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  background: #3498db;
+  color: white;
+  transition: background-color 0.2s, transform 0.1s;
+}
+button:hover { background: #2980b9; transform: translateY(-1px); }
+.button-group { display: flex; flex-wrap: wrap; justify-content: center; margin-bottom: 12px; }
+
+/* Calendar - grid 7 coloane */
+.calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  margin: 16px 0 20px 0;
+}
+.day {
+  border-radius: 10px;
+  min-height: 55px;
+  text-align: center;
+  border: 1px solid #ddd;
+  cursor: pointer;
+  user-select: none;
+  font-size: 15px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.3;
+  transition: background-color 0.3s, transform 0.1s;
+}
+.day:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+.day .day-number { font-size: 15px; margin-top: 6px; font-weight: bold; }
+.day-header {
+  font-weight: 700;
+  background: #ecf0f1;
+  border-radius: 10px;
+  padding: 8px 0;
+  text-align: center;
+}
+.day.weekend { color: #888; }
+.day.holiday { background-color: #e8f4fb; border-color: #bce0f6; }
+
+/* Indicatori activitate zilnică */
+.day .indicators {
+  display: flex;
+  justify-content: center;
+  gap: 3px;
+  margin-top: 4px;
+  margin-bottom: 4px;
+}
+.day .indicators .indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1px solid rgba(0,0,0,0.1);
+}
+.day.note-indicator::after {
+    content: "📝";
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    font-size: 10px;
+}
+
+/* Rapoarte copii */
+.report {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+.child-report {
+  background: #f8f8f8;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 16px;
+  min-width: 280px;
+  box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
+}
+.child-report h3 {
+  margin: 0 0 12px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 1.2em;
+}
+.child-report h3 span { font-weight: bold; }
+
+/* Inputs */
+input[type="number"], input[type="text"], select {
+  width: 95%;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  margin: 6px 0;
+  box-sizing: border-box;
+}
+
+/* Popup (modals) */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0,0,0,0.4);
+  backdrop-filter: blur(4px);
+  justify-content: center;
+  align-items: center;
+}
+.modal-content {
+  background-color: #fff;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  max-width: 500px;
+  width: 90%;
+  position: relative;
+  animation: modal-fadein 0.3s ease-out;
+}
+.modal-close {
+  color: #aaa;
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+}
+.modal-close:hover, .modal-close:focus { color: #000; text-decoration: none; }
+@keyframes modal-fadein { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Legendă culori */
+.legend {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 20px;
+  padding: 12px;
+  background: #f8f8f8;
+  border-radius: 12px;
+  border: 1px solid #eee;
+}
+.legend-item { display: flex; gap: 8px; align-items: center; font-size: 14px; }
+.color-box { width: 20px; height: 20px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.08); }
+.color-box-gradient {
+  background: linear-gradient(45deg, #3498db, #9b59b6);
+}
+
+/* Detalii contabile */
+.accounting-section {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 24px;
+}
+.payment-history {
+    background: #f8f8f8;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 16px;
+    flex: 1;
+    min-width: 300px;
+    box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
+}
+.payment-list { list-style-type: none; padding: 0; }
+.payment-list li {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 8px;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.payment-list li button {
+    background: none;
+    border: none;
+    color: #e74c3c;
+    font-size: 1.2em;
+    padding: 0;
+    margin: 0;
+}
+.payment-input-group { display: flex; gap: 8px; }
+
+/* Stiluri specifice pentru popup */
+.day-popup-section {
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+}
+.day-popup-section h4 { margin: 0 0 10px 0; font-size: 1.1em; }
+.day-popup-section button.active {
+    background: #2ecc71;
+    color: white;
+    border-color: #2ecc71;
+}
+
+/* Grafice */
+#chartContainer {
+    max-width: 600px;
+    margin: 20px auto;
+    background: #f8f8f8;
+    padding: 15px;
+    border-radius: 12px;
+    border: 1px solid #e0e0e0;
+}
+
+
+@media (max-width:768px) {
+  .day { min-height:48px; }
+  .day-header { padding: 6px 0; }
+  button { width:100%; margin: 6px 0; }
+  .child-report { min-width:unset; width:100%; }
+  .container { padding:16px; margin:10px; }
+}
+</style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+</head>
+<body>
+<div class="container">
+  <h1>Prezență Grădiniță</h1>
+
+  <div style="text-align:center; margin-bottom:12px; display:flex; align-items:center; justify-content:center; gap:8px;">
+    <button onclick="changeMonth(-1)">⬅</button>
+    <select id="monthSelectNav" onchange="changeMonthToSelected()">
+        <option value="0">Ianuarie</option><option value="1">Februarie</option><option value="2">Martie</option>
+        <option value="3">Aprilie</option><option value="4">Mai</option><option value="5">Iunie</option>
+        <option value="6">Iulie</option><option value="7">August</option><option value="8">Septembrie</option>
+        <option value="9">Octombrie</option><option value="10">Noiembrie</option><option value="11">Decembrie</option>
+    </select>
+    <input type="number" id="yearSelectNav" onchange="changeMonthToSelected()" value="" style="width:80px; text-align:center;" />
+    <button onclick="changeMonth(1)">➡</button>
+  </div>
+
+  <div id="calendar" class="calendar"></div>
+
+  <div id="chartContainer">
+      <canvas id="myChart"></canvas>
+  </div>
+
+  <div class="report" id="childrenReports"></div>
+
+  <div class="button-group">
+    <button onclick="addChild()">➕ Adaugă copil</button>
+    <button onclick="resetData()">🗑️ Resetare date</button>
+    <button onclick="exportJSON()">💾 Export JSON</button>
+    <input type="file" id="importFile" style="display:none" accept=".json" onchange="importJSON(event)">
+    <button onclick="document.getElementById('importFile').click()">📂 Import JSON</button>
+  </div>
+
+  <div class="button-group">
+    <button onclick="exportExcel()">📊 Export Excel</button>
+    <button onclick="exportPDF()">📄 Export PDF</button>
+  </div>
+
+  <div class="legend" id="legend"></div>
+</div>
+
+<div id="dayModal" class="modal">
+    <div class="modal-content">
+        <span class="modal-close" onclick="closeModal('dayModal')">&times;</span>
+        <h3 style="text-align: center;">Detalii pentru ziua <span id="modalDayNumber"></span></h3>
+
+        <div class="day-popup-section">
+            <h4>Prezență și activități</h4>
+            <div id="childSelectionButtons"></div>
+        </div>
+
+        <div class="day-popup-section">
+            <h4>Notițe</h4>
+            <textarea id="noteTextarea" placeholder="Adaugă o notiță (ex: schemă de mâncare, observație)..." style="width: 100%; height: 80px;"></textarea>
+            <button onclick="saveNote()">Salvează notița</button>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; gap: 8px;">
+            <button style="background-color: #e74c3c; width: 100%;" onclick="clearDaySelections()">Șterge toate selecțiile</button>
+            <button style="background-color: #3498db; width: 100%;" onclick="closeModal('dayModal')">Închide</button>
+        </div>
+    </div>
+</div>
+
+<div id="settingsModal" class="modal">
+    <div class="modal-content">
+        <span class="modal-close" onclick="closeModal('settingsModal')">&times;</span>
+        <h3>Setări pentru <span id="settingsChildName"></span></h3>
+        <label>Nume copil:</label><br>
+        <input type="text" id="editChildName" /><br>
+        <label>Cost standard Grădiniță:</label><br>
+        <input type="number" id="editDefaultRate" /><br>
+        <label>Culoare Grădiniță:</label><br>
+        <input type="color" id="editChildColor" /><br>
+        <label>Cost standard Engleză:</label><br>
+        <input type="number" id="editDefaultEnglishRate" /><br>
+        <label>Culoare Engleză:</label><br>
+        <input type="color" id="editEnglishColor" /><br>
+        <div style="display:flex; justify-content:space-between; margin-top:10px;">
+            <button style="background: #e74c3c; flex: 1; margin: 0 4px;" onclick="deleteChild()">Șterge copil</button>
+            <button style="background: #2ecc71; flex: 1; margin: 0 4px;" onclick="saveChildSettings()">Salvează</button>
+        </div>
+    </div>
+</div>
+
+<div id="paymentsModal" class="modal">
+    <div class="modal-content">
+        <span class="modal-close" onclick="closeModal('paymentsModal')">&times;</span>
+        <h3>Istoric plăți <span id="paymentsChildName"></span> (<span id="paymentsMonth"></span>)</h3>
+        <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+            <input type="number" id="newPaymentAmount" placeholder="Sumă" style="width: 100px;"/>
+            <input type="date" id="newPaymentDate" style="width: 140px;"/>
+            <button onclick="addPayment()">Adaugă plată</button>
+        </div>
+        <ul id="paymentList" class="payment-list"></ul>
+        <div style="margin-top: 15px; font-weight: bold; font-size: 1.1em;">
+            Total plătit: <span id="paymentsTotal">0</span>
+        </div>
+    </div>
+</div>
+
+
+<script>
+/* ================== VARIABILE & CONFIG ================== */
+const STORAGE_KEY = 'gradinitaDataV3'; // V3 pentru a asigura resetarea
+const BACKUP_INTERVAL_MS = 60 * 60 * 1000;
+let lastBackupTime = 0;
+
+let today = new Date();
+let month = today.getMonth();
+let year = today.getFullYear();
+let selectedDay = null;
+let selectedCell = null;
+let chartInstance = null;
+let selectedChildIdForModal = null;
+
+/* ================== HELPER: load/save localStorage ================== */
+const loadData = () => {
+    try {
+        const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+        if (!data.children || typeof data.children !== 'object') {
+            data.children = {};
+        }
+        return data;
+    } catch (e) {
+        console.error("Failed to load data from localStorage", e);
+        return { children: {} };
+    }
+};
+
+const saveData = (data) => {
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    } catch (e) {
+        console.error("Failed to save data to localStorage", e);
+    }
+};
+
+const sanitize = (input) => {
+    if (typeof input !== 'string') return input;
+    const temp = document.createElement('div');
+    temp.textContent = input;
+    return temp.innerHTML;
+};
+
+/* ================== RENDER: calendar + rapoarte ================== */
+const renderCalendar = () => {
+    const calendar = document.getElementById('calendar');
+    calendar.innerHTML = '';
+    const data = loadData();
+    const key = `${year}-${month}`;
+
+    if (!data[key]) {
+        data[key] = { days: {}, daysEnglish: {}, rates: {}, notes: {}, englishRates: {}, payments: {}, holidays: [] };
+        saveData(data);
+    }
+
+    const weekdays = ['Lu', 'Ma', 'Mi', 'Jo', 'Vi', 'Sa', 'Du'];
+    weekdays.forEach((w, idx) => {
+        const el = document.createElement('div');
+        el.className = 'day-header';
+        if (idx >= 5) el.classList.add('weekend');
+        el.textContent = w;
+        calendar.appendChild(el);
+    });
+
+    const firstDay = new Date(year, month, 1).getDay();
+    const empty = firstDay === 0 ? 6 : firstDay - 1;
+    for (let i = 0; i < empty; i++) calendar.appendChild(document.createElement('div'));
+
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    for (let d = 1; d <= daysInMonth; d++) {
+        const day = document.createElement('div');
+        day.className = 'day';
+        day.dataset.day = d;
+        day.innerHTML = `<span class="day-number">${d}</span>`;
+        if (new Date(year, month, d).getDay() === 0 || new Date(year, month, d).getDay() === 6) {
+            day.classList.add('weekend');
+        }
+        day.onclick = (e) => showDayModal(d, day);
+        updateDayDisplay(day, d, data[key]);
+        calendar.appendChild(day);
+    }
+
+    const monthLabelNav = document.getElementById('monthSelectNav');
+    const yearLabelNav = document.getElementById('yearSelectNav');
+    monthLabelNav.value = month;
+    yearLabelNav.value = year;
+
+    renderChildrenReports();
+    renderLegend();
+    renderChart();
+};
+
+const updateDayDisplay = (cell, day, monthData) => {
+    cell.style.backgroundColor = '';
+    cell.style.color = '#333';
+    cell.style.border = '1px solid #ddd';
+    cell.style.background = '';
+    cell.classList.remove('note-indicator');
+
+    let indicators = cell.querySelector('.indicators');
+    if(indicators) indicators.remove();
+    indicators = document.createElement('div');
+    indicators.className = 'indicators';
+
+    if (!monthData) return;
+
+    if(monthData.notes && monthData.notes[day]){
+        cell.classList.add('note-indicator');
+    }
+
+    if(monthData.holidays && monthData.holidays.includes(day)){
+        cell.classList.add('holiday');
+        return;
+    }
+
+    const childrenData = loadData().children;
+
+    for (const childId of Object.keys(childrenData)) {
+        if (monthData.days[childId] && monthData.days[childId].includes(day)) {
+            const indicator = document.createElement('div');
+            indicator.className = 'indicator';
+            indicator.style.backgroundColor = childrenData[childId]?.color || '#3498db';
+            indicators.appendChild(indicator);
+        }
+        if (monthData.daysEnglish[childId] && monthData.daysEnglish[childId].includes(day)) {
+            const indicator = document.createElement('div');
+            indicator.className = 'indicator';
+            indicator.style.backgroundColor = childrenData[childId]?.englishColor || '#9b59b6';
+            indicators.appendChild(indicator);
+        }
+    }
+
+    if (indicators.children.length > 0) {
+        cell.appendChild(indicators);
+    }
+};
+
+
+/* ================== MODALS ================== */
+const openModal = (modalId) => {
+    const modal = document.getElementById(modalId);
+    modal.style.display = 'flex';
+};
+
+const closeModal = (modalId) => {
+    const modal = document.getElementById(modalId);
+    modal.style.display = 'none';
+};
+
+const showDayModal = (day, elCell) => {
+    selectedDay = day;
+    selectedCell = elCell;
+    document.getElementById('modalDayNumber').textContent = day;
+    const data = loadData();
+    const key = `${year}-${month}`;
+    const children = data.children || {};
+    const childSelectionButtons = document.getElementById('childSelectionButtons');
+    childSelectionButtons.innerHTML = '';
+
+    const isHoliday = data[key].holidays && data[key].holidays.includes(day);
+    const holidayBtn = document.createElement('button');
+    holidayBtn.textContent = isHoliday ? 'Anulează zi liberă' : 'Marchează ca zi liberă';
+    holidayBtn.style.backgroundColor = isHoliday ? '#e74c3c' : '#2ecc71';
+    holidayBtn.onclick = toggleHoliday;
+    childSelectionButtons.appendChild(holidayBtn);
+
+    for (const id of Object.keys(children)) {
+        const isKindergartenActive = data[key].days[id] && data[key].days[id].includes(day);
+        const isEnglishActive = data[key].daysEnglish[id] && data[key].daysEnglish[id].includes(day);
+
+        const childSection = document.createElement('div');
+        childSection.className = 'selection-buttons';
+        childSection.innerHTML = `
+            <span>${sanitize(children[id].name)}</span>
+            <button class="${isKindergartenActive ? 'active' : ''}" onclick="togglePresence('${id}', 'kindergarten', this)">Grădiniță</button>
+            <button class="${isEnglishActive ? 'active' : ''}" onclick="togglePresence('${id}', 'english', this)">Engleză</button>
+        `;
+        childSelectionButtons.appendChild(childSection);
+    }
+
+    const existingNote = (data[key].notes && data[key].notes[selectedDay]) || '';
+    document.getElementById('noteTextarea').value = sanitize(existingNote);
+
+    openModal('dayModal');
+};
+
+const saveNote = () => {
+    const data = loadData();
+    const key = `${year}-${month}`;
+    if (!data[key].notes) data[key].notes = {};
+    const note = document.getElementById('noteTextarea').value.trim();
+    if (note) {
+        data[key].notes[selectedDay] = sanitize(note);
+    } else {
+        delete data[key].notes[selectedDay];
+    }
+    saveData(data);
+    updateDayDisplay(selectedCell, selectedDay, data[key]);
+    closeModal('dayModal');
+};
+
+const clearDaySelections = () => {
+    if (selectedDay === null) return;
+    const data = loadData();
+    const key = `${year}-${month}`;
+    for (const childId in data.children) {
+        if (data[key].days[childId]) {
+            data[key].days[childId] = data[key].days[childId].filter(d => d !== selectedDay);
+        }
+        if (data[key].daysEnglish[childId]) {
+            data[key].daysEnglish[childId] = data[key].daysEnglish[childId].filter(d => d !== selectedDay);
+        }
+    }
+    if (data[key].holidays) {
+        data[key].holidays = data[key].holidays.filter(d => d !== selectedDay);
+    }
+    if (data[key].notes) {
+        delete data[key].notes[selectedDay];
+    }
+    saveData(data);
+    updateDayDisplay(selectedCell, selectedDay, data[key]);
+    closeModal('dayModal');
+};
+
+const toggleHoliday = () => {
+    const data = loadData();
+    const key = `${year}-${month}`;
+    if (!data[key].holidays) data[key].holidays = [];
+
+    const index = data[key].holidays.indexOf(selectedDay);
+    if(index > -1){
+        data[key].holidays.splice(index, 1);
+    } else {
+        data[key].holidays.push(selectedDay);
+    }
+    saveData(data);
+    updateDayDisplay(selectedCell, selectedDay, data[key]);
+    closeModal('dayModal');
+};
+
+const togglePresence = (childId, type, button) => {
+    if (selectedDay === null) return;
+    const data = loadData();
+    const key = `${year}-${month}`;
+
+    if (data[key].holidays && data[key].holidays.includes(selectedDay)) {
+        data[key].holidays = data[key].holidays.filter(d => d !== selectedDay);
+    }
+
+    const daysField = type === 'kindergarten' ? 'days' : 'daysEnglish';
+    if (!data[key][daysField][childId]) data[key][daysField][childId] = [];
+    const daysArray = data[key][daysField][childId];
+    const index = daysArray.indexOf(selectedDay);
+    if (index > -1) {
+        daysArray.splice(index, 1);
+        button.classList.remove('active');
+    } else {
+        daysArray.push(selectedDay);
+        button.classList.add('active');
+    }
+    saveData(data);
+    updateDayDisplay(selectedCell, selectedDay, data[key]);
+};
+
+
+/* ================== RENDER rapoarte per copil ================== */
+const renderChildrenReports = () => {
+    const container = document.getElementById('childrenReports');
+    container.innerHTML = '';
+    const data = loadData();
+    if (!data.children) data.children = {};
+    const key = `${year}-${month}`;
+    if (!data[key]) data[key] = { days: {}, daysEnglish: {}, rates: {}, notes: {}, englishRates: {}, payments: {}, holidays: [] };
+
+    for (const id of Object.keys(data.children)) {
+        if (!data[key].days[id]) data[key].days[id] = [];
+        if (!data[key].daysEnglish[id]) data[key].daysEnglish[id] = [];
+        if (!data[key].rates[id]) data[key].rates[id] = data.children[id].defaultRate || 15;
+        if (!data[key].englishRates[id]) data[key].englishRates[id] = data.children[id].defaultEnglishRate || 0;
+        if (!data[key].payments[id]) data[key].payments[id] = [];
+
+        const daysKindergarten = data[key].days[id].length;
+        const daysEnglish = data[key].daysEnglish[id].length;
+        const totalKindergarten = daysKindergarten * (data[key].rates[id] || 0);
+        const totalEnglish = daysEnglish * (data[key].englishRates[id] || 0);
+        const totalCalculated = totalKindergarten + totalEnglish;
+        const totalPaid = data[key].payments[id].reduce((sum, p) => sum + parseFloat(p.amount), 0);
+        const diff = totalCalculated - totalPaid;
+
+        const div = document.createElement('div');
+        div.className = 'child-report';
+        div.innerHTML = `
+            <h3>
+                <span>${sanitize(data.children[id].name)}</span>
+                <button style="background:none; color:#2c3e50; font-size:1.4em; padding:0; margin:0;" onclick="showSettingsModal('${id}')">⚙️</button>
+            </h3>
+            <div style="font-size: 0.9em; color: #777;">
+                Cost/zi: Grădiniță (${data.children[id].defaultRate || 0}), Engleză (${data.children[id].defaultEnglishRate || 0})
+            </div>
+            <div style="margin-top: 10px;">
+                <strong>Zile Grădiniță:</strong> ${daysKindergarten} (${totalKindergarten.toFixed(2)} lei)
+            </div>
+            <div>
+                <strong>Zile Engleză:</strong> ${daysEnglish} (${totalEnglish.toFixed(2)} lei)
+            </div>
+            <div style="margin-top: 10px; font-weight: bold;">
+                Total calculat: ${totalCalculated.toFixed(2)} lei
+            </div>
+            <div>
+                Total plătit: <a href="#" onclick="showPaymentsModal('${id}')" style="text-decoration:none;">${totalPaid.toFixed(2)} lei</a>
+            </div>
+            <div style="font-weight: bold; color: ${diff >= 0 ? '#e74c3c' : '#2ecc71'};">
+                Diferență: ${diff.toFixed(2)} lei
+            </div>
+        `;
+        container.appendChild(div);
+    }
+};
+
+
+/* ================== Child Management (Modals) ================== */
+const showSettingsModal = (childId) => {
+    selectedChildIdForModal = childId;
+    const data = loadData();
+    const child = data.children[childId];
+    document.getElementById('settingsChildName').textContent = sanitize(child.name);
+    document.getElementById('editChildName').value = sanitize(child.name);
+    document.getElementById('editDefaultRate').value = child.defaultRate;
+    document.getElementById('editDefaultEnglishRate').value = child.defaultEnglishRate;
+    document.getElementById('editChildColor').value = child.color || '#3498db';
+    document.getElementById('editEnglishColor').value = child.englishColor || '#9b59b6';
+    openModal('settingsModal');
+};
+
+const saveChildSettings = () => {
+    const data = loadData();
+    const childId = selectedChildIdForModal;
+    if (!data.children[childId]) return;
+    data.children[childId].name = sanitize(document.getElementById('editChildName').value.trim());
+    data.children[childId].defaultRate = parseFloat(document.getElementById('editDefaultRate').value) || 0;
+    data.children[childId].defaultEnglishRate = parseFloat(document.getElementById('editDefaultEnglishRate').value) || 0;
+    data.children[childId].color = document.getElementById('editChildColor').value;
+    data.children[childId].englishColor = document.getElementById('editEnglishColor').value;
+    saveData(data);
+    renderCalendar();
+    closeModal('settingsModal');
+};
+
+const deleteChild = () => {
+    if (!confirm('Ștergi definitiv copilul și toate datele aferente pentru el?')) return;
+    const data = loadData();
+    const id = selectedChildIdForModal;
+    if (data.children && data.children[id]) delete data.children[id];
+    for (const k of Object.keys(data)) {
+        if (k === 'children') continue;
+        if (data[k].days && data[k].days[id]) delete data[k].days[id];
+        if (data[k].daysEnglish && data[k].daysEnglish[id]) delete data[k].daysEnglish[id];
+        if (data[k].rates && data[k].rates[id]) delete data[k].rates[id];
+        if (data[k].englishRates && data[k].englishRates[id]) delete data[k].englishRates[id];
+        if (data[k].payments && data[k].payments[id]) delete data[k].payments[id];
+    }
+    saveData(data);
+    renderCalendar();
+    closeModal('settingsModal');
+};
+
+
+/* ================== Payments Modal ================== */
+const showPaymentsModal = (childId) => {
+    selectedChildIdForModal = childId;
+    const data = loadData();
+    const key = `${year}-${month}`;
+    const childName = data.children[childId].name;
+    const monthName = new Date(year, month).toLocaleString('ro-RO', { month: 'long' });
+    document.getElementById('paymentsChildName').textContent = sanitize(childName);
+    document.getElementById('paymentsMonth').textContent = monthName;
+    renderPaymentList();
+    openModal('paymentsModal');
+};
+
+const renderPaymentList = () => {
+    const data = loadData();
+    const key = `${year}-${month}`;
+    const childId = selectedChildIdForModal;
+    const paymentList = document.getElementById('paymentList');
+    paymentList.innerHTML = '';
+
+    if (!data[key].payments[childId]) {
+        data[key].payments[childId] = [];
+        saveData(data);
+    }
+
+    let totalPaid = 0;
+    data[key].payments[childId].sort((a,b) => new Date(a.date) - new Date(b.date));
+
+    data[key].payments[childId].forEach((payment, index) => {
+        totalPaid += parseFloat(payment.amount);
+        const li = document.createElement('li');
+        li.innerHTML = `
+            <span>${payment.date} - ${parseFloat(payment.amount).toFixed(2)} lei</span>
+            <button onclick="deletePayment('${childId}', ${index})">&times;</button>
+        `;
+        paymentList.appendChild(li);
+    });
+
+    document.getElementById('paymentsTotal').textContent = totalPaid.toFixed(2);
+};
+
+const addPayment = () => {
+    const data = loadData();
+    const key = `${year}-${month}`;
+    const childId = selectedChildIdForModal;
+    const amount = parseFloat(document.getElementById('newPaymentAmount').value);
+    const date = document.getElementById('newPaymentDate').value;
+
+    if (isNaN(amount) || amount <= 0 || !date) {
+        alert("Introduceți o sumă și o dată valide.");
+        return;
+    }
+
+    if (!data[key].payments[childId]) {
+        data[key].payments[childId] = [];
+    }
+
+    data[key].payments[childId].push({ amount: amount, date: date });
+    saveData(data);
+    document.getElementById('newPaymentAmount').value = '';
+    document.getElementById('newPaymentDate').value = '';
+    renderPaymentList();
+    renderChildrenReports();
+};
+
+const deletePayment = (childId, index) => {
+    const data = loadData();
+    const key = `${year}-${month}`;
+    if (confirm('Ești sigur că vrei să ștergi această plată?')) {
+        data[key].payments[childId].splice(index, 1);
+        saveData(data);
+        renderPaymentList();
+        renderChildrenReports();
+    }
+};
+
+
+/* ================== EXPORT / IMPORT ================== */
+const exportJSON = () => {
+    const data = loadData();
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `gradinita_backup_${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+};
+
+const importJSON = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const obj = JSON.parse(e.target.result);
+            saveData(obj);
+            alert('Import finalizat. Datele locale au fost înlocuite.');
+            renderCalendar();
+        } catch (err) {
+            alert('Fișier JSON invalid.');
+        }
+    };
+    reader.readAsText(file);
+    event.target.value = '';
+};
+
+const exportExcel = () => {
+  const data = loadData();
+  const rows = [];
+  for(const key of Object.keys(data)){
+    if(key === 'children') continue;
+    const [y, m] = key.split('-');
+    const monthName = new Date(y, m).toLocaleString('ro-RO', { month: 'long' });
+    for(const childId of Object.keys(data.children || {})){
+      const kindergartenDays = (data[key].days && data[key].days[childId]) ? data[key].days[childId].length : 0;
+      const kindergartenRate = (data[key].rates && data[key].rates[childId]) ? data[key].rates[id] : (data.children[childId]?.defaultRate || 0);
+      const englishDays = (data[key].daysEnglish && data[key].daysEnglish[childId]) ? data[key].daysEnglish[id].length : 0;
+      const englishRate = (data[key].englishRates && data[key].englishRates[childId]) ? data[key].englishRates[id] : (data.children[childId]?.defaultEnglishRate || 0);
+      const totalKindergarten = kindergartenDays * kindergartenRate;
+      const totalEnglish = englishDays * englishRate;
+      const totalPaid = (data[key].payments[childId] || []).reduce((sum, p) => sum + parseFloat(p.amount), 0);
+      const diff = (totalKindergarten + totalEnglish) - totalPaid;
+
+      rows.push({
+        An: y,
+        Luna: monthName,
+        Copil: data.children[childId].name,
+        "Zile Grădiniță": kindergartenDays,
+        "Cost/zi Grădiniță": kindergartenRate,
+        "Total Grădiniță": totalKindergarten,
+        "Zile Engleză": englishDays,
+        "Cost/zi Engleză": englishRate,
+        "Total Engleză": totalEnglish,
+        "Total Calculat": totalKindergarten + totalEnglish,
+        "Total Platit": totalPaid,
+        "Diferenta": diff
+      });
+    }
+  }
+
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Prezențe');
+  XLSX.writeFile(wb, 'gradinita_export.xlsx');
+};
+
+const exportPDF = () => {
+    const data = loadData();
+    const rows = [];
+    for(const key of Object.keys(data)){
+        if(key === 'children') continue;
+        const [y, m] = key.split('-');
+        const monthName = new Date(y, m).toLocaleString('ro-RO', { month: 'long' });
+        for(const childId of Object.keys(data.children || {})){
+            const kindergartenDays = (data[key].days && data[key].days[childId]) ? data[key].days[childId].length : 0;
+            const kindergartenRate = (data[key].rates && data[key].rates[childId]) ? data[key].rates[id] : (data.children[childId]?.defaultRate || 0);
+            const englishDays = (data[key].daysEnglish && data[key].daysEnglish[childId]) ? data[key].daysEnglish[id].length : 0;
+            const englishRate = (data[key].englishRates && data[key].englishRates[childId]) ? data[key].englishRates[id] : (data.children[childId]?.defaultEnglishRate || 0);
+            const totalKindergarten = kindergartenDays * kindergartenRate;
+            const totalEnglish = englishDays * englishRate;
+            const totalPaid = (data[key].payments[childId] || []).reduce((sum, p) => sum + parseFloat(p.amount), 0);
+            const diff = (totalKindergarten + totalEnglish) - totalPaid;
+
+            rows.push([
+                y, monthName, data.children[childId].name,
+                kindergartenDays, kindergartenRate, totalKindergarten,
+                englishDays, englishRate, totalEnglish,
+                totalKindergarten + totalEnglish, totalPaid, diff
+            ]);
+        }
+    }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('l', 'pt', 'a4');
+    const head = [['An','Luna','Copil','Zile Grăd.','Cost/zi','Total Grăd.','Zile Engl.','Cost/zi','Total Engl.','Total Calc.','Total Plătit','Diferență']];
+    doc.autoTable({
+        head: head,
+        body: rows,
+        startY: 40,
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [52,152,219], textColor: 255 },
+        theme: 'grid'
+    });
+    doc.save('gradinita_export.pdf');
+};
+
+
+/* ================== Resetare date ================== */
+const resetData = () => {
+    if (!confirm('Sigur vrei să ștergi toate datele stocate local? Această acțiune nu se poate anula.')) return;
+    localStorage.removeItem(STORAGE_KEY);
+    renderCalendar();
+};
+
+/* ================== Navigare lună / an ================== */
+const changeMonth = (offset) => {
+    month += offset;
+    if (month < 0) { month = 11; year -= 1; }
+    if (month > 11) { month = 0; year += 1; }
+    today = new Date(year, month, 1);
+    document.getElementById('yearSelectNav').value = year;
+    document.getElementById('monthSelectNav').value = month;
+    renderCalendar();
+};
+
+const changeMonthToSelected = () => {
+    month = parseInt(document.getElementById('monthSelectNav').value);
+    year = parseInt(document.getElementById('yearSelectNav').value);
+    renderCalendar();
+};
+
+/* ================== Legendă culori ================== */
+const renderLegend = () => {
+    const data = loadData();
+    const legend = document.getElementById('legend');
+    legend.innerHTML = '';
+    if (!data.children) data.children = {};
+
+    for (const childId of Object.keys(data.children)) {
+        const child = data.children[childId];
+
+        // Element pentru Grădiniță
+        const itemKindergarten = document.createElement('div');
+        itemKindergarten.className = 'legend-item';
+        const boxKindergarten = document.createElement('div');
+        boxKindergarten.className = 'color-box';
+        boxKindergarten.style.background = child.color;
+        const labelKindergarten = document.createElement('div');
+        labelKindergarten.textContent = `${sanitize(child.name)} - Grădiniță`;
+        itemKindergarten.appendChild(boxKindergarten);
+        itemKindergarten.appendChild(labelKindergarten);
+        legend.appendChild(itemKindergarten);
+
+        // Element pentru Engleză
+        const itemEnglish = document.createElement('div');
+        itemEnglish.className = 'legend-item';
+        const boxEnglish = document.createElement('div');
+        boxEnglish.className = 'color-box';
+        boxEnglish.style.background = child.englishColor;
+        const labelEnglish = document.createElement('div');
+        labelEnglish.textContent = `${sanitize(child.name)} - Engleză`;
+        itemEnglish.appendChild(boxEnglish);
+        itemEnglish.appendChild(labelEnglish);
+        legend.appendChild(itemEnglish);
+    }
+};
+
+/* ================== Grafic ================== */
+const renderChart = () => {
+    const data = loadData();
+    const key = `${year}-${month}`;
+    const children = data.children || {};
+    const labels = [];
+    const kindergartenData = [];
+    const englishData = [];
+
+    for (const id of Object.keys(children)) {
+        const kindergartenDays = (data[key].days && data[key].days[id]) ? data[key].days[id].length : 0;
+        const englishDays = (data[key].daysEnglish && data[key].daysEnglish[id]) ? data[key].daysEnglish[id].length : 0;
+        labels.push(children[id].name);
+        kindergartenData.push(kindergartenDays);
+        englishData.push(englishDays);
+    }
+
+    const ctx = document.getElementById('myChart').getContext('2d');
+    if (chartInstance) {
+        chartInstance.destroy();
+    }
+
+    chartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Zile Grădiniță',
+                    data: kindergartenData,
+                    backgroundColor: Object.values(children).map(c => c.color || '#3498db'),
+                    borderColor: Object.values(children).map(c => c.color || '#3498db'),
+                    borderWidth: 1
+                },
+                {
+                    label: 'Zile Engleză',
+                    data: englishData,
+                    backgroundColor: Object.values(children).map(c => c.englishColor || '#9b59b6'),
+                    borderColor: Object.values(children).map(c => c.englishColor || '#9b59b6'),
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                x: { stacked: true },
+                y: { stacked: true, beginAtZero: true, title: { display: true, text: 'Număr de zile' } }
+            },
+            plugins: {
+                title: { display: true, text: `Prezența copiilor în luna ${new Date(year, month).toLocaleString('ro-RO', { month: 'long' })}` }
+            }
+        }
+    });
+};
+
+/* ================== Backup automat ================== */
+const autoBackup = () => {
+    const now = Date.now();
+    const lastBackup = localStorage.getItem('lastBackupTime');
+    if (!lastBackup || (now - lastBackup > BACKUP_INTERVAL_MS)) {
+        exportJSON();
+        localStorage.setItem('lastBackupTime', now);
+        console.log("Auto-backup completed.");
+    }
+};
+
+/* ================== Inițializare ================== */
+(function init() {
+    const data = loadData();
+    if (!data.children || Object.keys(data.children).length === 0) {
+        data.children = {};
+        const id1 = 'c1';
+        const id2 = 'c2';
+        data.children[id1] = { name: 'Casian', defaultRate: 15, defaultEnglishRate: 20, color: '#4da6ff', englishColor: '#9b59b6' };
+        data.children[id2] = { name: 'Ezra', defaultRate: 15, defaultEnglishRate: 20, color: '#ffd633', englishColor: '#ff6f61' };
+        saveData(data);
+    }
+
+    document.getElementById('yearSelectNav').value = new Date().getFullYear();
+    document.getElementById('monthSelectNav').value = new Date().getMonth();
+
+    renderCalendar();
+    // autoBackup();
+    // setInterval(autoBackup, BACKUP_INTERVAL_MS);
+})();
+</script>
+</body>
+</html>
