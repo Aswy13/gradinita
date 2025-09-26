@@ -11,7 +11,35 @@ const urlsToCache = [
   'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js',
   'https://cdn.jsdelivr.net/npm/chart.js'
 ];
+// ================== PWA Service Worker Registration & Update Handler ==================
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js')
+            .then(registration => {
+                console.log('ServiceWorker registration successful with scope: ', registration.scope);
 
+                // Ascultă evenimentul de actualizare (updatefound)
+                registration.addEventListener('updatefound', () => {
+                    const installingWorker = registration.installing;
+                    installingWorker.addEventListener('statechange', () => {
+                        // Când noul Service Worker a terminat de instalat
+                        if (installingWorker.state === 'installed') {
+                            if (navigator.serviceWorker.controller) {
+                                // Afișează mesajul de actualizare
+                                document.getElementById('update-message').style.display = 'block';
+                            } else {
+                                // Primul conținut a fost pus în cache
+                                console.log('Content is cached for offline use.');
+                            }
+                        }
+                    });
+                });
+            })
+            .catch(error => {
+                console.log('ServiceWorker registration failed: ', error);
+            });
+    });
+}
 // Instalare: Caching-ul fișierelor statice
 self.addEventListener('install', event => {
   event.waitUntil(
