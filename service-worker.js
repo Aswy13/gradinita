@@ -11,6 +11,7 @@ const urlsToCache = [
   'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js',
   'https://cdn.jsdelivr.net/npm/chart.js'
 ];
+// AICI ÎNCEPE LOCUL DE INSERARE:
 // ================== PWA Service Worker Registration & Update Handler ==================
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
@@ -40,16 +41,7 @@ if ('serviceWorker' in navigator) {
             });
     });
 }
-// Instalare: Caching-ul fișierelor statice
-self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => {
-        console.log('Opened cache');
-        return cache.addAll(urlsToCache);
-      })
-  );
-});
+// AICI SE TERMINĂ LOCUL DE INSERARE
 
 // Fetch: Servirea conținutului din cache
 self.addEventListener('fetch', event => {
