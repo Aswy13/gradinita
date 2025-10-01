@@ -35,9 +35,6 @@ body {
 
 /* Container central care încadră tot conținutul */
 .container {
-  <div id="update-message" style="display:none; position:fixed; bottom:20px; right:20px; background:#e74c3c; color:white; padding:15px; border-radius:10px; box-shadow:0 4px 8px rgba(0,0,0,0.2); z-index:10000;">
-    O actualizare este disponibilă! <button onclick="window.location.reload(true)" style="background:#2ecc71; margin-left:10px;">Reîncărcați acum</button>
-</div>
   max-width: 1100px;
   width: 95%;
   background: #fff;
@@ -158,6 +155,7 @@ button:hover { background: #2980b9; transform: translateY(-1px); }
   padding: 16px;
   min-width: 280px;
   box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
+  font-size: 0.95em;
 }
 .child-report h3 {
   margin: 0 0 12px 0;
@@ -215,6 +213,19 @@ input[type="number"], input[type="text"], select {
 .modal-close:hover, .modal-close:focus { color: #000; text-decoration: none; }
 @keyframes modal-fadein { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
 
+/* Stiluri specifice pentru popup */
+.day-popup-section {
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+}
+.day-popup-section h4 { margin: 0 0 10px 0; font-size: 1.1em; }
+.day-popup-section button.active {
+    background: #2ecc71;
+    color: white;
+    border-color: #2ecc71;
+}
+
 /* Legendă culori */
 .legend {
   display: flex;
@@ -268,19 +279,6 @@ input[type="number"], input[type="text"], select {
 }
 .payment-input-group { display: flex; gap: 8px; }
 
-/* Stiluri specifice pentru popup */
-.day-popup-section {
-  border-bottom: 1px solid #eee;
-  padding-bottom: 10px;
-  margin-bottom: 10px;
-}
-.day-popup-section h4 { margin: 0 0 10px 0; font-size: 1.1em; }
-.day-popup-section button.active {
-    background: #2ecc71;
-    color: white;
-    border-color: #2ecc71;
-}
-
 /* Grafice */
 #chartContainer {
     max-width: 600px;
@@ -294,6 +292,8 @@ input[type="number"], input[type="text"], select {
 /* Stiluri pentru raportul general */
 #generalReportContainer {
     margin-top: 20px;
+    max-height: 60vh;
+    overflow-y: auto;
 }
 #generalReportTable {
     width: 100%;
@@ -308,6 +308,8 @@ input[type="number"], input[type="text"], select {
 #generalReportTable th {
     background-color: #3498db;
     color: white;
+    position: sticky;
+    top: 0;
 }
 #generalReportTable tr:nth-child(even) { background-color: #f2f2f2; }
 .report-options {
@@ -335,7 +337,13 @@ input[type="number"], input[type="text"], select {
 </head>
 <body>
 <div class="container">
-  <h1>Prezență Grădiniță</h1>
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div style="flex:1;"></div>
+        <h1>Prezență Grădiniță</h1>
+        <div style="flex:1; text-align:right;">
+            <button style="padding: 8px 12px; margin: 0; background: #95a5a6;" onclick="window.open('https://github.com/Aswy13/gradinita', '_blank')">INFO</button>
+        </div>
+    </div>
 
   <div style="text-align:center; margin-bottom:12px; display:flex; align-items:center; justify-content:center; gap:8px;">
     <button onclick="changeMonth(-1)">⬅</button>
@@ -372,16 +380,11 @@ input[type="number"], input[type="text"], select {
   </div>
 
   <div class="legend" id="legend"></div>
-</div>
-   <div class="legend" id="legend"></div>
+    <div style="text-align: center; margin-top: 20px; color: #7f8c8d; font-size: 0.9em;">
+        Aplicație creată de Aswy
+    </div>
 </div>
 
-<footer style="text-align:center; padding:10px 0; margin-top:20px; font-size:0.8em; color:#7f8c8d;">
-    <p>Aplicație dezvoltată de: <span style="font-weight:bold; color:#3498db;">ASWY</span></p>
-</footer>
-
-<div id="dayModal" class="modal">
-...
 <div id="dayModal" class="modal">
     <div class="modal-content">
         <span class="modal-close" onclick="closeModal('dayModal')">&times;</span>
@@ -462,8 +465,8 @@ input[type="number"], input[type="text"], select {
         <div class="report-options">
             <label>An:</label>
             <select id="reportYearSelect"></select>
-            <label>Lună:</label>
-            <select id="reportMonthSelect">
+            <label>Lună (selectați mai multe cu Ctrl/Cmd):</label>
+            <select id="reportMonthSelect" multiple style="height: 150px;">
                 <option value="-1">Toate lunile</option>
                 <option value="0">Ianuarie</option><option value="1">Februarie</option><option value="2">Martie</option>
                 <option value="3">Aprilie</option><option value="4">Mai</option><option value="5">Iunie</option>
@@ -478,14 +481,14 @@ input[type="number"], input[type="text"], select {
 
 <script>
 /* ================== VARIABILE & CONFIG ================== */
-const STORAGE_KEY = 'gradinitaDataV5'; // V5 pentru a asigura resetarea
+const STORAGE_KEY = 'gradinitaDataV5';
 const BACKUP_INTERVAL_MS = 60 * 60 * 1000;
 let lastBackupTime = 0;
 
 let today = new Date();
 let month = today.getMonth();
 let year = today.getFullYear();
-let selectedDay = null;
+let selectedDays = [];
 let selectedCell = null;
 let chartInstance = null;
 let selectedChildIdForModal = null;
@@ -560,9 +563,12 @@ const renderCalendar = () => {
         day.dataset.day = d;
         day.innerHTML = `<span class="day-number">${d}</span>`;
         if (new Date(year, month, d).getDay() === 0 || new Date(year, month, d).getDay() === 6) {
+            const key = `${year}-${month}`;
+            if (!data[key].holidays.includes(d)) data[key].holidays.push(d);
+            saveData(data);
             day.classList.add('weekend');
         }
-        day.onclick = (e) => showDayModal(d, day);
+        day.onclick = (e) => toggleCtrlSelection(d, day, e);
         updateDayDisplay(day, d, data[key]);
         calendar.appendChild(day);
     }
@@ -623,10 +629,8 @@ const updateDayDisplay = (cell, day, monthData) => {
     if(monthData.paymentsOnDay && monthData.paymentsOnDay[day]) {
       const paymentInfo = monthData.paymentsOnDay[day];
       if(paymentInfo.length > 0) {
-        // Poți alege să arăți un singur indicator pentru toate plățile din zi
         const indicator = document.createElement('div');
         indicator.className = 'indicator';
-        // Folosește culoarea salvată la adăugarea plății
         indicator.style.backgroundColor = paymentInfo[0].color;
         indicators.appendChild(indicator);
       }
@@ -639,6 +643,14 @@ const updateDayDisplay = (cell, day, monthData) => {
 
 
 /* ================== MODALS ================== */
+const clearMultiSelection = () => {
+    selectedDays.forEach(d => {
+        const cell = document.querySelector(`.day[data-day='${d}']`);
+        if (cell) cell.style.outline = '';
+    });
+    selectedDays = [];
+};
+
 const openModal = (modalId) => {
     const modal = document.getElementById(modalId);
     modal.style.display = 'flex';
@@ -647,12 +659,14 @@ const openModal = (modalId) => {
 const closeModal = (modalId) => {
     const modal = document.getElementById(modalId);
     modal.style.display = 'none';
+    if(modalId === 'dayModal') {
+        clearMultiSelection();
+    }
 };
 
 const showDayModal = (day, elCell) => {
-    selectedDay = day;
-    selectedCell = elCell;
-    document.getElementById('modalDayNumber').textContent = day;
+    // selectedDay is now implicitly the current selectedDays array
+    document.getElementById('modalDayNumber').textContent = selectedDays.length > 1 ? selectedDays.join(', ') : day;
     const data = loadData();
     const key = `${year}-${month}`;
     const children = data.children || {};
@@ -661,26 +675,28 @@ const showDayModal = (day, elCell) => {
 
     const isHoliday = data[key].holidays && data[key].holidays.includes(day);
     const holidayBtn = document.createElement('button');
-    holidayBtn.textContent = isHoliday ? 'Anulează zi liberă' : 'Marchează ca zi liberă';
-    holidayBtn.style.backgroundColor = isHoliday ? '#e74c3c' : '#2ecc71';
-    holidayBtn.onclick = toggleHoliday;
+    // Verifică dacă toate zilele selectate sunt "holiday" pentru a determina starea butonului
+    holidayBtn.textContent = selectedDays.every(d => data[key].holidays && data[key].holidays.includes(d)) ? 'Anulează zi liberă' : 'Marchează ca zi liberă';
+    holidayBtn.style.backgroundColor = selectedDays.every(d => data[key].holidays && data[key].holidays.includes(d)) ? '#e74c3c' : '#2ecc71';
+    holidayBtn.onclick = applyMultiHoliday;
     childSelectionButtons.appendChild(holidayBtn);
 
     for (const id of Object.keys(children)) {
-        const isKindergartenActive = data[key].days[id] && data[key].days[id].includes(day);
-        const isExtraActive = data[key].daysExtra[id] && data[key].daysExtra[id].includes(day);
+        // Verifică dacă toate zilele selectate au prezența / extra activitatea marcată
+        const isKindergartenActive = selectedDays.every(d => data[key].days[id] && data[key].days[id].includes(d));
+        const isExtraActive = selectedDays.every(d => data[key].daysExtra[id] && data[key].daysExtra[id].includes(d));
 
         const childSection = document.createElement('div');
         childSection.className = 'selection-buttons';
         childSection.innerHTML = `
             <span>${sanitize(children[id].name)}</span>
-            <button class="${isKindergartenActive ? 'active' : ''}" onclick="togglePresence('${id}', 'kindergarten', this)">Grădiniță</button>
-            <button class="${isExtraActive ? 'active' : ''}" onclick="togglePresence('${id}', 'extra', this)">${sanitize(children[id].extraName)}</button>
+            <button class="${isKindergartenActive ? 'active' : ''}" onclick="applyMultiPresence('${id}','kindergarten')">Grădiniță</button>
+            <button class="${isExtraActive ? 'active' : ''}" onclick="applyMultiPresence('${id}','extra')">${sanitize(children[id].extraName)}</button>
         `;
         childSelectionButtons.appendChild(childSection);
     }
 
-    const existingNote = (data[key].notes && data[key].notes[selectedDay]) || '';
+    const existingNote = (data[key].notes && data[key].notes[selectedDays[0]]) || '';
     document.getElementById('noteTextarea').value = sanitize(existingNote);
 
     openModal('dayModal');
@@ -692,79 +708,151 @@ const saveNote = () => {
     if (!data[key].notes) data[key].notes = {};
     const note = document.getElementById('noteTextarea').value.trim();
     if (note) {
-        data[key].notes[selectedDay] = sanitize(note);
+        selectedDays.forEach(d => {
+            data[key].notes[d] = sanitize(note);
+            const cell = document.querySelector(`.day[data-day='${d}']`);
+            if (cell) updateDayDisplay(cell, d, data[key]);
+        });
     } else {
-        delete data[key].notes[selectedDay];
+        selectedDays.forEach(d => {
+            delete data[key].notes[d];
+            const cell = document.querySelector(`.day[data-day='${d}']`);
+            if (cell) updateDayDisplay(cell, d, data[key]);
+        });
     }
     saveData(data);
-    updateDayDisplay(selectedCell, selectedDay, data[key]);
     closeModal('dayModal');
+    clearMultiSelection();
 };
 
 const clearDaySelections = () => {
-    if (selectedDay === null) return;
     const data = loadData();
     const key = `${year}-${month}`;
-    for (const childId in data.children) {
-        if (data[key].days[childId]) {
-            data[key].days[childId] = data[key].days[childId].filter(d => d !== selectedDay);
+    selectedDays.forEach(d => {
+        for (const childId in data.children) {
+            if (data[key].days[childId]) {
+                data[key].days[childId] = data[key].days[childId].filter(day => day !== d);
+            }
+            if (data[key].daysExtra[childId]) {
+                data[key].daysExtra[childId] = data[key].daysExtra[childId].filter(day => day !== d);
+            }
         }
-        if (data[key].daysExtra[childId]) {
-            data[key].daysExtra[childId] = data[key].daysExtra[childId].filter(d => d !== selectedDay);
+        if (data[key].holidays) {
+            data[key].holidays = data[key].holidays.filter(day => day !== d);
         }
-    }
-    if (data[key].holidays) {
-        data[key].holidays = data[key].holidays.filter(d => d !== selectedDay);
-    }
-    if (data[key].notes) {
-        delete data[key].notes[selectedDay];
-    }
+        if (data[key].notes) {
+            delete data[key].notes[d];
+        }
+    });
     saveData(data);
-    updateDayDisplay(selectedCell, selectedDay, data[key]);
+    renderCalendar();
     closeModal('dayModal');
+    clearMultiSelection();
 };
 
-const toggleHoliday = () => {
+
+// ================== SELECȚIE MULTIPLĂ CU CTRL - LOGICĂ CORECTATĂ ==================
+const toggleCtrlSelection = (day, elCell, event) => {
+    const isCtrlKey = event.ctrlKey || event.metaKey;
+    const index = selectedDays.indexOf(day);
+
+    if (isCtrlKey) {
+        // Ctrl Click: Toggle selection and outline. Do nothing else.
+        if (index > -1) {
+            selectedDays.splice(index, 1);
+            elCell.style.outline = '';
+        } else {
+            selectedDays.push(day);
+            elCell.style.outline = '3px solid #3498db';
+        }
+    } else {
+        // Normal Click: Open modal for the current selection.
+
+        // 1. Check if the click is on a day that is ALREADY part of a multi-selection
+        const isOpeningMulti = selectedDays.length > 1 && index > -1;
+
+        if (!isOpeningMulti) {
+            // 2. If it's a new single-day click, clear previous selection and highlight only this day.
+            clearMultiSelection(); // Clearing selection outline
+            selectedDays = [day];
+            elCell.style.outline = '3px solid #3498db';
+        }
+
+        // 3. Open the modal with the current selectedDays list.
+        showDayModal(day, elCell);
+    }
+};
+
+const applyMultiPresence = (childId, type) => {
+    const data = loadData();
+    const key = `${year}-${month}`;
+    const daysField = type === 'kindergarten' ? 'days' : 'daysExtra';
+    if (!data[key][daysField][childId]) data[key][daysField][childId] = [];
+
+    // Determină dacă acțiunea e de "on" sau "off" pe baza selecției curente
+    const isTogglingOn = !selectedDays.every(d => data[key][daysField][childId].includes(d));
+
+    selectedDays.forEach(d => {
+        const arr = data[key][daysField][childId];
+        const idx = arr.indexOf(d);
+        if (isTogglingOn) {
+            if (idx === -1) {
+                arr.push(d);
+            }
+            // Scoate de la "holidays" dacă se marchează prezența
+            if (data[key].holidays && data[key].holidays.includes(d)) {
+                data[key].holidays = data[key].holidays.filter(h => h !== d);
+            }
+        } else {
+            if (idx > -1) {
+                arr.splice(idx, 1);
+            }
+        }
+    });
+
+    saveData(data);
+    renderCalendar();
+    closeModal('dayModal');
+    clearMultiSelection();
+};
+
+const applyMultiHoliday = () => {
     const data = loadData();
     const key = `${year}-${month}`;
     if (!data[key].holidays) data[key].holidays = [];
 
-    const index = data[key].holidays.indexOf(selectedDay);
-    if(index > -1){
-        data[key].holidays.splice(index, 1);
-    } else {
-        data[key].holidays.push(selectedDay);
-    }
+    // Determină dacă acțiunea e de "on" sau "off" pe baza selecției curente
+    const isTogglingOn = !selectedDays.every(d => data[key].holidays.includes(d));
+
+    selectedDays.forEach(d => {
+        const idx = data[key].holidays.indexOf(d);
+        if (isTogglingOn) {
+            if (idx === -1) {
+                data[key].holidays.push(d);
+            }
+            // Scoate de la "prezență" dacă se marchează zi liberă
+            for(const childId in data.children){
+                if (data[key].days[childId]) {
+                    data[key].days[childId] = data[key].days[childId].filter(day => day !== d);
+                }
+                if (data[key].daysExtra[childId]) {
+                    data[key].daysExtra[childId] = data[key].daysExtra[childId].filter(day => day !== d);
+                }
+            }
+        } else {
+            if (idx > -1) {
+                data[key].holidays.splice(idx, 1);
+            }
+        }
+    });
+
     saveData(data);
-    updateDayDisplay(selectedCell, selectedDay, data[key]);
+    renderCalendar();
     closeModal('dayModal');
+    clearMultiSelection();
 };
 
-const togglePresence = (childId, type, button) => {
-    if (selectedDay === null) return;
-    const data = loadData();
-    const key = `${year}-${month}`;
-
-    if (data[key].holidays && data[key].holidays.includes(selectedDay)) {
-        data[key].holidays = data[key].holidays.filter(d => d !== selectedDay);
-    }
-
-    const daysField = type === 'kindergarten' ? 'days' : 'daysExtra';
-    if (!data[key][daysField][childId]) data[key][daysField][childId] = [];
-    const daysArray = data[key][daysField][childId];
-    const index = daysArray.indexOf(selectedDay);
-    if (index > -1) {
-        daysArray.splice(index, 1);
-        button.classList.remove('active');
-    } else {
-        daysArray.push(selectedDay);
-        button.classList.add('active');
-    }
-    saveData(data);
-    updateDayDisplay(selectedCell, selectedDay, data[key]);
-};
-
-
+// MODIFICAT: Logica de calcul a fost inversată (plătit - calculat) pentru a afișa soldul corect
 /* ================== RENDER rapoarte per copil ================== */
 const renderChildrenReports = () => {
     const container = document.getElementById('childrenReports');
@@ -775,6 +863,15 @@ const renderChildrenReports = () => {
     if (!data[key]) data[key] = {
         days: {}, daysExtra: {}, rates: {}, notes: {}, extraRates: {}, payments: {}, holidays: [], paymentsOnDay: {}
     };
+
+    let prevMonth = month - 1;
+    let prevYear = year;
+    if (prevMonth < 0) {
+        prevMonth = 11;
+        prevYear -= 1;
+    }
+    const prevKey = `${prevYear}-${prevMonth}`;
+    const prevMonthData = data[prevKey];
 
     for (const id of Object.keys(data.children)) {
         if (!data[key].days[id]) data[key].days[id] = [];
@@ -787,13 +884,32 @@ const renderChildrenReports = () => {
         const daysExtra = data[key].daysExtra[id].length;
         const totalKindergarten = daysKindergarten * (data[key].rates[id] || 0);
         const totalExtra = daysExtra * (data[key].extraRates[id] || 0);
-        const totalCalculated = totalKindergarten + totalExtra;
+        const totalCalculatedCurrentMonth = totalKindergarten + totalExtra;
 
         const totalPaidKindergarten = data[key].payments[id].filter(p => p.type === 'kindergarten').reduce((sum, p) => sum + parseFloat(p.amount), 0);
         const totalPaidExtra = data[key].payments[id].filter(p => p.type === 'extra').reduce((sum, p) => sum + parseFloat(p.amount), 0);
-        const totalPaid = totalPaidKindergarten + totalPaidExtra;
+        const totalPaidCurrentMonth = totalPaidKindergarten + totalPaidExtra;
 
-        const diff = totalCalculated - totalPaid;
+        let previousMonthBalance = 0;
+        if (prevMonthData && prevMonthData.days && prevMonthData.payments) {
+            const prevDaysKindergarten = (prevMonthData.days[id] || []).length;
+            const prevRateKindergarten = prevMonthData.rates?.[id] ?? data.children[id].defaultRate;
+            const prevTotalKindergarten = prevDaysKindergarten * prevRateKindergarten;
+
+            const prevDaysExtra = (prevMonthData.daysExtra[id] || []).length;
+            const prevRateExtra = prevMonthData.extraRates?.[id] ?? data.children[id].defaultExtraRate;
+            const prevTotalExtra = prevDaysExtra * prevRateExtra;
+
+            const prevTotalCalculated = prevTotalKindergarten + prevTotalExtra;
+            const prevTotalPaid = (prevMonthData.payments[id] || []).reduce((sum, p) => sum + parseFloat(p.amount), 0);
+
+            // MODIFICAT: Logica inversată: Plătit - Calculat
+            previousMonthBalance = prevTotalPaid - prevTotalCalculated;
+        }
+
+        const totalToPayWithBalance = totalCalculatedCurrentMonth - previousMonthBalance;
+        // MODIFICAT: Logica inversată: Plătit - (Calculat - Sold)
+        const finalDiff = totalPaidCurrentMonth - totalToPayWithBalance;
 
         const div = document.createElement('div');
         div.className = 'child-report';
@@ -802,17 +918,20 @@ const renderChildrenReports = () => {
                 <span>${sanitize(data.children[id].name)}</span>
                 <button style="background:none; color:#2c3e50; font-size:1.4em; padding:0; margin:0;" onclick="showSettingsModal('${id}')">⚙️</button>
             </h3>
-            <div style="font-size: 0.9em; color: #777;">
-                Cost/zi: Grădiniță (${data.children[id].defaultRate || 0}), ${sanitize(data.children[id].extraName)} (${data.children[id].defaultExtraRate || 0})
-            </div>
             <div style="margin-top: 10px;">
                 <strong>Zile Grădiniță:</strong> ${daysKindergarten} (${totalKindergarten.toFixed(2)} lei)
             </div>
             <div>
                 <strong>Zile ${sanitize(data.children[id].extraName)}:</strong> ${daysExtra} (${totalExtra.toFixed(2)} lei)
             </div>
-            <div style="margin-top: 10px; font-weight: bold;">
-                Total calculat: ${totalCalculated.toFixed(2)} lei
+            <div style="border-top: 1px solid #eee; margin-top: 8px; padding-top: 8px;">
+                <strong>Subtotal luna curentă:</strong> ${totalCalculatedCurrentMonth.toFixed(2)} lei
+            </div>
+            <div style="font-weight: bold; color: ${previousMonthBalance >= 0 ? '#2ecc71' : '#e74c3c'};">
+                Sold lună precedentă: ${previousMonthBalance.toFixed(2)} lei
+            </div>
+            <div style="margin-top: 10px; font-weight: bold; font-size: 1.1em; border-top: 1px solid #ddd; padding-top: 8px;">
+                Total de plată (cu sold): ${totalToPayWithBalance.toFixed(2)} lei
             </div>
             <div>
                 Plătit Grădiniță: <a href="#" onclick="showPaymentsModal('${id}')" style="text-decoration:none;">${totalPaidKindergarten.toFixed(2)} lei</a>
@@ -820,8 +939,8 @@ const renderChildrenReports = () => {
             <div>
                 Plătit ${sanitize(data.children[id].extraName)}: <a href="#" onclick="showPaymentsModal('${id}')" style="text-decoration:none;">${totalPaidExtra.toFixed(2)} lei</a>
             </div>
-            <div style="font-weight: bold; color: ${diff >= 0 ? '#e74c3c' : '#2ecc71'};">
-                Diferență: ${diff.toFixed(2)} lei
+            <div style="font-weight: bold; font-size: 1.1em; color: ${finalDiff >= 0 ? '#2ecc71' : '#e74c3c'}; border-top: 1px solid #ddd; margin-top: 8px; padding-top: 8px;">
+                Balanță finală: ${finalDiff.toFixed(2)} lei
             </div>
         `;
         container.appendChild(div);
@@ -963,17 +1082,11 @@ const addPayment = () => {
         data[key].payments[childId] = [];
     }
 
-    // Preluăm culoarea aleasă de utilizator din câmpul de input color
     const paymentColor = document.getElementById('newPaymentColor').value;
-
-    // Adaugăm plata cu culoarea specificată
     data[key].payments[childId].push({ amount: amount, date: dateStr, type: type, color: paymentColor });
 
-    // Adaugă plata și la `paymentsOnDay` pentru afișare pe calendar
     if(!data[key].paymentsOnDay) data[key].paymentsOnDay = {};
     if(!data[key].paymentsOnDay[day]) data[key].paymentsOnDay[day] = [];
-
-    // Folosim culoarea aleasă pentru indicatorul de pe calendar
     data[key].paymentsOnDay[day].push({ childId: childId, amount: amount, color: paymentColor });
 
     saveData(data);
@@ -981,23 +1094,20 @@ const addPayment = () => {
     document.getElementById('newPaymentDate').value = '';
     renderPaymentList();
     renderChildrenReports();
-    renderCalendar(); // Re-render calendar pentru a afisa plata
+    renderCalendar();
 };
 
 const deletePayment = (childId, index) => {
     const data = loadData();
     const key = `${year}-${month}`;
     if (confirm('Ești sigur că vrei să ștergi această plată?')) {
-        // Obține informațiile plății pentru a o șterge și din paymentsOnDay
         const paymentToDelete = data[key].payments[childId][index];
         const date = new Date(paymentToDelete.date);
         const day = date.getDate();
 
         data[key].payments[childId].splice(index, 1);
 
-        // Șterge din paymentsOnDay
         if(data[key].paymentsOnDay && data[key].paymentsOnDay[day]) {
-            // Trebuie să comparăm și culoarea/tipul/suma exactă, deoarece o zi poate avea mai multe plăți
             data[key].paymentsOnDay[day] = data[key].paymentsOnDay[day].filter(p => !(p.childId === childId && p.amount === paymentToDelete.amount && p.color === paymentToDelete.color));
             if(data[key].paymentsOnDay[day].length === 0) {
                 delete data[key].paymentsOnDay[day];
@@ -1007,7 +1117,7 @@ const deletePayment = (childId, index) => {
         saveData(data);
         renderPaymentList();
         renderChildrenReports();
-        renderCalendar(); // Re-render calendar pentru a actualiza afisarea
+        renderCalendar();
     }
 };
 
@@ -1056,24 +1166,22 @@ const exportExcel = () => {
       const totalExtra = extraDays * extraRate;
       const totalPaidKindergarten = (data[key].payments[childId] || []).filter(p => p.type === 'kindergarten').reduce((sum, p) => sum + parseFloat(p.amount), 0);
       const totalPaidExtra = (data[key].payments[childId] || []).filter(p => p.type === 'extra').reduce((sum, p) => sum + parseFloat(p.amount), 0);
-      const totalPaid = totalPaidKindergarten + totalPaidExtra;
-      const diff = (totalKindergarten + totalExtra) - totalPaid;
+
+      const balanceKindergarten = totalPaidKindergarten - totalKindergarten;
+      const balanceExtra = totalPaidExtra - totalExtra;
 
       rows.push({
         An: y,
         Luna: monthName,
         Copil: data.children[childId].name,
         "Zile Grădiniță": kindergartenDays,
-        "Cost/zi Grădiniță": kindergartenRate,
         "Total Grădiniță": totalKindergarten,
-        ["Zile " + data.children[childId].extraName]: extraDays,
-        ["Cost/zi " + data.children[childId].extraName]: extraRate,
-        ["Total " + data.children[childId].extraName]: totalExtra,
-        "Total Calculat": totalKindergarten + totalExtra,
         "Plătit Grădiniță": totalPaidKindergarten,
-        "Plătit Activitate": totalPaidExtra,
-        "Total Plătit": totalPaid,
-        "Diferenta": diff
+        "Balanță Grădiniță": balanceKindergarten,
+        ["Zile " + data.children[childId].extraName]: extraDays,
+        ["Total " + data.children[childId].extraName]: totalExtra,
+        ["Plătit " + data.children[childId].extraName]: totalPaidExtra,
+        ["Balanță " + data.children[childId].extraName]: balanceExtra
       });
     }
   }
@@ -1085,42 +1193,44 @@ const exportExcel = () => {
 };
 
 const exportPDF = () => {
-    const data = loadData();
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('l', 'pt', 'a4');
+    const head = [
+        ['An', 'Luna', 'Copil', 'Total Grăd.', 'Plătit Grăd.', 'Balanță Grăd.', 'Total Act.', 'Plătit Act.', 'Balanță Act.']
+    ];
     const rows = [];
-    for(const key of Object.keys(data)){
-        if(key === 'children') continue;
+    const data = loadData();
+
+    for (const key of Object.keys(data)) {
+        if (key === 'children') continue;
         const [y, m] = key.split('-');
         const monthName = new Date(y, m).toLocaleString('ro-RO', { month: 'long' });
-        for(const childId of Object.keys(data.children || {})){
-            const kindergartenDays = (data[key].days && data[key].days[childId]) ? data[key].days[childId].length : 0;
-            const kindergartenRate = (data[key].rates && data[key].rates[childId]) ? data[key].rates[childId] : (data.children[childId]?.defaultRate || 0);
-            const extraDays = (data[key].daysExtra && data[key].daysExtra[childId]) ? data[key].daysExtra[childId].length : 0;
-            const extraRate = (data[key].extraRates && data[key].extraRates[childId]) ? data[key].extraRates[childId] : (data.children[childId]?.defaultExtraRate || 0);
+        for (const childId of Object.keys(data.children || {})) {
+            const kindergartenDays = (data[key].days?.[childId] || []).length;
+            const kindergartenRate = data[key].rates?.[childId] ?? data.children[childId]?.defaultRate ?? 0;
+            const extraDays = (data[key].daysExtra?.[childId] || []).length;
+            const extraRate = data[key].extraRates?.[childId] ?? data.children[childId]?.defaultExtraRate ?? 0;
             const totalKindergarten = kindergartenDays * kindergartenRate;
             const totalExtra = extraDays * extraRate;
-            const totalPaidKindergarten = (data[key].payments[childId] || []).filter(p => p.type === 'kindergarten').reduce((sum, p) => sum + parseFloat(p.amount), 0);
-            const totalPaidExtra = (data[key].payments[childId] || []).filter(p => p.type === 'extra').reduce((sum, p) => sum + parseFloat(p.amount), 0);
-            const totalPaid = totalPaidKindergarten + totalPaidExtra;
-            const diff = (totalKindergarten + totalExtra) - totalPaid;
+            const totalPaidKindergarten = (data[key].payments?.[childId] || []).filter(p => p.type === 'kindergarten').reduce((sum, p) => sum + parseFloat(p.amount), 0);
+            const totalPaidExtra = (data[key].payments?.[childId] || []).filter(p => p.type === 'extra').reduce((sum, p) => sum + parseFloat(p.amount), 0);
+            const balanceKindergarten = totalPaidKindergarten - totalKindergarten;
+            const balanceExtra = totalPaidExtra - totalExtra;
 
             rows.push([
                 y, monthName, data.children[childId].name,
-                kindergartenDays, kindergartenRate, totalKindergarten,
-                extraDays, extraRate, totalExtra,
-                totalKindergarten + totalExtra, totalPaidKindergarten, totalPaidExtra, totalPaid, diff
+                totalKindergarten.toFixed(2), totalPaidKindergarten.toFixed(2), balanceKindergarten.toFixed(2),
+                totalExtra.toFixed(2), totalPaidExtra.toFixed(2), balanceExtra.toFixed(2)
             ]);
         }
     }
 
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('l', 'pt', 'a4');
-    const head = [['An','Luna','Copil','Zile Grăd.','Cost/zi','Total Grăd.','Zile Ext.','Cost/zi','Total Ext.','Total Calc.','Plătit Grăd.','Plătit Ext.','Total Plătit','Diferență']];
     doc.autoTable({
         head: head,
         body: rows,
         startY: 40,
         styles: { fontSize: 8 },
-        headStyles: { fillColor: [52,152,219], textColor: 255 },
+        headStyles: { fillColor: [52, 152, 219], textColor: 255 },
         theme: 'grid'
     });
     doc.save('gradinita_export.pdf');
@@ -1160,42 +1270,19 @@ const renderLegend = () => {
 
     for (const childId of Object.keys(data.children)) {
         const child = data.children[childId];
-
-        // Element pentru Grădiniță
         const itemKindergarten = document.createElement('div');
         itemKindergarten.className = 'legend-item';
-        const boxKindergarten = document.createElement('div');
-        boxKindergarten.className = 'color-box';
-        boxKindergarten.style.background = child.color;
-        const labelKindergarten = document.createElement('div');
-        labelKindergarten.textContent = `${sanitize(child.name)} - Grădiniță`;
-        itemKindergarten.appendChild(boxKindergarten);
-        itemKindergarten.appendChild(labelKindergarten);
+        itemKindergarten.innerHTML = `<div class="color-box" style="background:${child.color}"></div><div>${sanitize(child.name)} - Grădiniță</div>`;
         legend.appendChild(itemKindergarten);
 
-        // Element pentru Activitate Suplimentară
         const itemExtra = document.createElement('div');
         itemExtra.className = 'legend-item';
-        const boxExtra = document.createElement('div');
-        boxExtra.className = 'color-box';
-        boxExtra.style.background = child.extraColor;
-        const labelExtra = document.createElement('div');
-        labelExtra.textContent = `${sanitize(child.name)} - ${sanitize(child.extraName)}`;
-        itemExtra.appendChild(boxExtra);
-        itemExtra.appendChild(labelExtra);
+        itemExtra.innerHTML = `<div class="color-box" style="background:${child.extraColor}"></div><div>${sanitize(child.name)} - ${sanitize(child.extraName)}</div>`;
         legend.appendChild(itemExtra);
     }
-
-    // Adaugă legenda pentru plăți (folosim o culoare generică, dar plata afișată pe calendar va folosi culoarea aleasă)
     const itemPayment = document.createElement('div');
     itemPayment.className = 'legend-item';
-    const boxPayment = document.createElement('div');
-    boxPayment.className = 'color-box';
-    boxPayment.style.background = '#2ecc71';
-    const labelPayment = document.createElement('div');
-    labelPayment.textContent = 'Indicator Plată';
-    itemPayment.appendChild(boxPayment);
-    itemPayment.appendChild(labelPayment);
+    itemPayment.innerHTML = `<div class="color-box" style="background:#2ecc71"></div><div>Indicator Plată</div>`;
     legend.appendChild(itemPayment);
 };
 
@@ -1209,17 +1296,13 @@ const renderChart = () => {
     const extraData = [];
 
     for (const id of Object.keys(children)) {
-        const kindergartenDays = (data[key].days && data[key].days[id]) ? data[key].days[id].length : 0;
-        const extraDays = (data[key].daysExtra && data[key].daysExtra[id]) ? data[key].daysExtra[id].length : 0;
         labels.push(children[id].name);
-        kindergartenData.push(kindergartenDays);
-        extraData.push(extraDays);
+        kindergartenData.push((data[key]?.days?.[id] || []).length);
+        extraData.push((data[key]?.daysExtra?.[id] || []).length);
     }
 
     const ctx = document.getElementById('myChart').getContext('2d');
-    if (chartInstance) {
-        chartInstance.destroy();
-    }
+    if (chartInstance) chartInstance.destroy();
 
     chartInstance = new Chart(ctx, {
         type: 'bar',
@@ -1229,16 +1312,12 @@ const renderChart = () => {
                 {
                     label: 'Zile Grădiniță',
                     data: kindergartenData,
-                    backgroundColor: Object.values(children).map(c => c.color || '#3498db'),
-                    borderColor: Object.values(children).map(c => c.color || '#3498db'),
-                    borderWidth: 1
+                    backgroundColor: Object.values(children).map(c => c.color || '#3498db')
                 },
                 {
-                    label: Object.values(children).length > 0 ? `Zile ${Object.values(children)[0].extraName}` : 'Zile Activitate Suplimentară',
+                    label: 'Zile Activitate Suplimentară',
                     data: extraData,
-                    backgroundColor: Object.values(children).map(c => c.extraColor || '#9b59b6'),
-                    borderColor: Object.values(children).map(c => c.extraColor || '#9b59b6'),
-                    borderWidth: 1
+                    backgroundColor: Object.values(children).map(c => c.extraColor || '#9b59b6')
                 }
             ]
         },
@@ -1255,6 +1334,7 @@ const renderChart = () => {
     });
 };
 
+// MODIFICAT: Funcționalitate actualizată pentru a gestiona selecția multiplă și noile coloane de balanță
 /* ================== Raport general ================== */
 const showGeneralReportModal = () => {
     const reportYearSelect = document.getElementById('reportYearSelect');
@@ -1267,9 +1347,7 @@ const showGeneralReportModal = () => {
         reportYearSelect.appendChild(option);
     }
     reportYearSelect.value = currentYear;
-
     openModal('generalReportModal');
-    // Generăm raportul inițial
     generateGeneralReport();
 };
 
@@ -1278,20 +1356,31 @@ const generateGeneralReport = () => {
     container.innerHTML = '<h4>Se generează raportul...</h4>';
 
     const selectedYear = document.getElementById('reportYearSelect').value;
-    const selectedMonth = document.getElementById('reportMonthSelect').value;
-    const data = loadData();
+    const monthSelect = document.getElementById('reportMonthSelect');
 
+    // MODIFICAT: Colectează toate lunile selectate
+    let selectedMonths = Array.from(monthSelect.options)
+                               .filter(option => option.selected)
+                               .map(option => option.value);
+
+    const data = loadData();
     let monthsToReport = [];
-    if (selectedMonth === '-1') {
-        // Toate lunile din anul selectat
+
+    // Dacă este selectat "Toate lunile", se ignoră restul selecțiilor și se iau toate lunile
+    if (selectedMonths.includes('-1')) {
         for (let m = 0; m < 12; m++) {
             monthsToReport.push(`${selectedYear}-${m}`);
         }
     } else {
-        monthsToReport.push(`${selectedYear}-${selectedMonth}`);
+        monthsToReport = selectedMonths.map(m => `${selectedYear}-${m}`);
     }
 
-    let reportHTML = '<table id="generalReportTable"><thead><tr><th>An</th><th>Lună</th><th>Copil</th><th>Total Grădiniță (lei)</th><th>Total Activitate (lei)</th><th>Total Calculat (lei)</th><th>Plătit Grădiniță (lei)</th><th>Plătit Activitate (lei)</th><th>Diferență (lei)</th></tr></thead><tbody>';
+    // MODIFICAT: Schimbat antetul tabelului
+    let reportHTML = `<table id="generalReportTable"><thead><tr>
+        <th>An</th><th>Lună</th><th>Copil</th>
+        <th>Total Grădiniță (lei)</th><th>Plătit Grădiniță (lei)</th><th>Balanță Grădiniță (lei)</th>
+        <th>Total Activitate (lei)</th><th>Plătit Activitate (lei)</th><th>Balanță Activitate (lei)</th>
+        </tr></thead><tbody>`;
 
     for (const key of monthsToReport) {
         if (!data[key]) continue;
@@ -1302,20 +1391,20 @@ const generateGeneralReport = () => {
             const childData = data.children[childId];
             const monthData = data[key];
 
-            const daysKindergarten = (monthData.days[childId] || []).length;
-            const daysExtra = (monthData.daysExtra[childId] || []).length;
-            const rateKindergarten = (monthData.rates[childId] !== undefined) ? monthData.rates[childId] : (childData.defaultRate || 0);
-            const rateExtra = (monthData.extraRates[childId] !== undefined) ? monthData.extraRates[childId] : (childData.defaultExtraRate || 0);
-
+            const daysKindergarten = (monthData.days?.[childId] || []).length;
+            const rateKindergarten = monthData.rates?.[childId] ?? (childData.defaultRate || 0);
             const totalKindergarten = daysKindergarten * rateKindergarten;
+
+            const daysExtra = (monthData.daysExtra?.[childId] || []).length;
+            const rateExtra = monthData.extraRates?.[childId] ?? (childData.defaultExtraRate || 0);
             const totalExtra = daysExtra * rateExtra;
-            const totalCalculated = totalKindergarten + totalExtra;
 
-            const totalPaidKindergarten = (monthData.payments[childId] || []).filter(p => p.type === 'kindergarten').reduce((sum, p) => sum + parseFloat(p.amount), 0);
-            const totalPaidExtra = (monthData.payments[childId] || []).filter(p => p.type === 'extra').reduce((sum, p) => sum + parseFloat(p.amount), 0);
-            const totalPaid = totalPaidKindergarten + totalPaidExtra;
+            const totalPaidKindergarten = (monthData.payments?.[childId] || []).filter(p => p.type === 'kindergarten').reduce((sum, p) => sum + parseFloat(p.amount), 0);
+            const totalPaidExtra = (monthData.payments?.[childId] || []).filter(p => p.type === 'extra').reduce((sum, p) => sum + parseFloat(p.amount), 0);
 
-            const diff = totalCalculated - totalPaid;
+            // MODIFICAT: Calcul balanță separat și cu logica inversată
+            const balanceKindergarten = totalPaidKindergarten - totalKindergarten;
+            const balanceExtra = totalPaidExtra - totalExtra;
 
             reportHTML += `
                 <tr>
@@ -1323,11 +1412,11 @@ const generateGeneralReport = () => {
                     <td>${monthName}</td>
                     <td>${sanitize(childData.name)}</td>
                     <td>${totalKindergarten.toFixed(2)}</td>
-                    <td>${totalExtra.toFixed(2)}</td>
-                    <td>${totalCalculated.toFixed(2)}</td>
                     <td>${totalPaidKindergarten.toFixed(2)}</td>
+                    <td style="color: ${balanceKindergarten >= 0 ? '#2ecc71' : '#e74c3c'}; font-weight: bold;">${balanceKindergarten.toFixed(2)}</td>
+                    <td>${totalExtra.toFixed(2)}</td>
                     <td>${totalPaidExtra.toFixed(2)}</td>
-                    <td style="color: ${diff >= 0 ? '#e74c3c' : '#2ecc71'};">${diff.toFixed(2)}</td>
+                    <td style="color: ${balanceExtra >= 0 ? '#2ecc71' : '#e74c3c'}; font-weight: bold;">${balanceExtra.toFixed(2)}</td>
                 </tr>
             `;
         }
@@ -1360,30 +1449,19 @@ const autoBackup = () => {
         data.children[id2] = { name: 'Ezra', defaultRate: 15, defaultExtraRate: 20, extraName: 'Engleză', color: '#ffd633', extraColor: '#ff6f61' };
         saveData(data);
     }
-    // Update old data structure to V5 if it exists and is old
-    if (localStorage.getItem('gradinitaDataV4') !== null) {
-        localStorage.removeItem('gradinitaDataV4');
-        console.log("Previous data structure V4 reset to V5.");
-    }
 
     document.getElementById('yearSelectNav').value = new Date().getFullYear();
     document.getElementById('monthSelectNav').value = new Date().getMonth();
 
     renderCalendar();
-    // autoBackup();
-    // setInterval(autoBackup, BACKUP_INTERVAL_MS);
-    // ================== PWA Service Worker Registration ==================
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/service-worker.js')
-            .then(registration => {
-                console.log('ServiceWorker registration successful with scope: ', registration.scope);
-            })
-            .catch(error => {
-                console.log('ServiceWorker registration failed: ', error);
-            });
-    });
-}
+
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/service-worker.js')
+                .then(registration => console.log('ServiceWorker registration successful'))
+                .catch(error => console.log('ServiceWorker registration failed: ', error));
+        });
+    }
 })();
 </script>
 </body>
