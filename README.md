@@ -1,2 +1,3 @@
 # gradinita
-o aplicatie de gestiune a zilelor de prezenta si a banilor ce trebuie platit
+Aplicatie de gestionare a prezentei si costului la gradinita si creasa.
+Necesar dupa instalare sa faceti o resetare date, apoi sa adaugati campuri noi.
