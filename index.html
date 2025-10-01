@@ -211,7 +211,7 @@ input[type="number"], input[type="text"], select {
   cursor: pointer;
 }
 .modal-close:hover, .modal-close:focus { color: #000; text-decoration: none; }
-@keyframes modal-fadein { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes modal-fadein { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 
 /* Stiluri specifice pentru popup */
 .day-popup-section {
@@ -341,7 +341,7 @@ input[type="number"], input[type="text"], select {
         <div style="flex:1;"></div>
         <h1>Prezență Grădiniță</h1>
         <div style="flex:1; text-align:right;">
-            <button style="padding: 8px 12px; margin: 0; background: #95a5a6;" onclick="window.open('https://github.com/Aswy13/gradinita', '_blank')">INFO</button>
+            <button style="padding: 8px 12px; margin: 0; background: #000000;" onclick="window.open('https://github.com/aswy13/gradinita', '_blank')">INFO</button>
         </div>
     </div>
 
@@ -380,8 +380,8 @@ input[type="number"], input[type="text"], select {
   </div>
 
   <div class="legend" id="legend"></div>
-    <div style="text-align: center; margin-top: 20px; color: #7f8c8d; font-size: 0.9em;">
-        Aplicație creată de Aswy
+    <div style="text-align: center; margin-top: 20px; color: #ff0000; font-size: 0.9em;">
+        POWER BY ASWY
     </div>
 </div>
 
@@ -522,6 +522,63 @@ const sanitize = (input) => {
     return temp.innerHTML;
 };
 
+/* ================== ACCOUNTING LOGIC (CUMULATIVE BALANCE) ================== */
+
+/**
+ * Calculează soldul cumulativ (plăți totale minus costuri totale) pentru un copil,
+ * până la începutul lunii specificate (exclusiv luna curentă).
+ *
+ * @param {number} currentYear Anul curent (pentru limitare)
+ * @param {number} currentMonth Luna curentă (0-11) (pentru limitare)
+ * @param {string} childId ID-ul copilului
+ * @param {object} data Toate datele aplicației
+ * @returns {number} Soldul cumulativ (pozitiv = credit, negativ = datorie)
+ */
+const getHistoricalBalance = (currentYear, currentMonth, childId, data) => {
+    let cumulativeCost = 0;
+    let cumulativePaid = 0;
+
+    // Obține toate cheile an-lună și le filtrează
+    const allKeys = Object.keys(data).filter(k => k !== 'children');
+
+    // Sortează cheile cronologic
+    allKeys.sort((a, b) => {
+        const [aY, aM] = a.split('-').map(Number);
+        const [bY, bM] = b.split('-').map(Number);
+        if (aY !== bY) return aY - bY;
+        return aM - bM;
+    });
+
+    for (const key of allKeys) {
+        const [y, m] = key.split('-').map(Number);
+
+        // Se oprește la luna DINAINTE de luna curentă
+        if (y > currentYear || (y === currentYear && m >= currentMonth)) {
+            break;
+        }
+
+        const monthData = data[key];
+        const childData = data.children[childId];
+        if (!childData) continue;
+
+        // 1. Calculează Costul Real (pe baza prezenței)
+        const rateKindergarten = monthData.rates?.[childId] ?? childData.defaultRate;
+        const rateExtra = monthData.extraRates?.[childId] ?? childData.defaultExtraRate;
+        const kindergartenDays = (monthData.days?.[childId] || []).length;
+        const extraDays = (monthData.daysExtra?.[childId] || []).length;
+        const totalCalculated = (kindergartenDays * rateKindergarten) + (extraDays * rateExtra);
+        cumulativeCost += totalCalculated;
+
+        // 2. Calculează Plățile Reale (pe baza înregistrărilor)
+        const totalPaid = (monthData.payments?.[childId] || []).reduce((sum, p) => sum + parseFloat(p.amount), 0);
+        cumulativePaid += totalPaid;
+    }
+
+    // Sold Reportat: Plătit Total - Cost Total (Cumulativ)
+    return cumulativePaid - cumulativeCost;
+};
+
+
 /* ================== RENDER: calendar + rapoarte ================== */
 const renderCalendar = () => {
     const calendar = document.getElementById('calendar');
@@ -564,7 +621,10 @@ const renderCalendar = () => {
         day.innerHTML = `<span class="day-number">${d}</span>`;
         if (new Date(year, month, d).getDay() === 0 || new Date(year, month, d).getDay() === 6) {
             const key = `${year}-${month}`;
-            if (!data[key].holidays.includes(d)) data[key].holidays.push(d);
+            if (!data[key].holidays.includes(d)) {
+                 if (!data[key].holidays) data[key].holidays = [];
+                 data[key].holidays.push(d);
+            }
             saveData(data);
             day.classList.add('weekend');
         }
@@ -599,29 +659,40 @@ const updateDayDisplay = (cell, day, monthData) => {
 
     if(monthData.notes && monthData.notes[day]){
         cell.classList.add('note-indicator');
+        cell.title = `Notiță: ${sanitize(monthData.notes[day])}`; // Tooltip for note
     }
 
     if(monthData.holidays && monthData.holidays.includes(day)){
         cell.classList.add('holiday');
+        if(!cell.title) cell.title = "Zi liberă / Sâmbătă-Duminică"; // Tooltip for holiday
         return;
     }
 
     const childrenData = loadData().children;
-    const paymentIndicators = [];
+
+    // Lista de elemente pentru tooltip (se adaugă la celulă, nu la indicator)
+    let cellTooltipContent = '';
 
     // Verifică prezențele
     for (const childId of Object.keys(childrenData)) {
+        const childName = sanitize(childrenData[childId].name);
+        const extraName = sanitize(childrenData[childId].extraName);
+
         if (monthData.days[childId] && monthData.days[childId].includes(day)) {
             const indicator = document.createElement('div');
             indicator.className = 'indicator';
             indicator.style.backgroundColor = childrenData[childId]?.color || '#3498db';
+            indicator.title = `${childName} - Grădiniță`; // Tooltip added
             indicators.appendChild(indicator);
+            cellTooltipContent += (cellTooltipContent ? '\n' : '') + `${childName} - Grădiniță`;
         }
         if (monthData.daysExtra[childId] && monthData.daysExtra[childId].includes(day)) {
             const indicator = document.createElement('div');
             indicator.className = 'indicator';
             indicator.style.backgroundColor = childrenData[childId]?.extraColor || '#9b59b6';
+            indicator.title = `${childName} - ${extraName}`; // Tooltip added
             indicators.appendChild(indicator);
+            cellTooltipContent += (cellTooltipContent ? '\n' : '') + `${childName} - ${extraName}`;
         }
     }
 
@@ -631,13 +702,29 @@ const updateDayDisplay = (cell, day, monthData) => {
       if(paymentInfo.length > 0) {
         const indicator = document.createElement('div');
         indicator.className = 'indicator';
+        // Folosim culoarea primei plăți ca indicator principal
         indicator.style.backgroundColor = paymentInfo[0].color;
+
+        // Tooltip generation for payments
+        const paymentTooltip = paymentInfo.map(p => {
+             const child = childrenData[p.childId];
+             const childName = child ? sanitize(child.name) : 'Necunoscut';
+             return `${parseFloat(p.amount).toFixed(2)} lei - ${childName}`;
+        }).join('\n');
+        indicator.title = `Plăți:\n${paymentTooltip}`; // Tooltip added
+
         indicators.appendChild(indicator);
+        cellTooltipContent += (cellTooltipContent ? '\n---\n' : '') + `Plăți:\n${paymentTooltip}`;
       }
     }
 
     if (indicators.children.length > 0) {
         cell.appendChild(indicators);
+    }
+
+    // Adaugă tooltip-ul general pentru celulă (dacă nu e notiță sau vacanță)
+    if (cellTooltipContent && !cell.classList.contains('note-indicator') && !cell.classList.contains('holiday')) {
+        cell.title = cellTooltipContent;
     }
 };
 
@@ -787,6 +874,7 @@ const applyMultiPresence = (childId, type) => {
     const data = loadData();
     const key = `${year}-${month}`;
     const daysField = type === 'kindergarten' ? 'days' : 'daysExtra';
+    if (!data[key][daysField]) data[key][daysField] = {};
     if (!data[key][daysField][childId]) data[key][daysField][childId] = [];
 
     // Determină dacă acțiunea e de "on" sau "off" pe baza selecției curente
@@ -852,102 +940,6 @@ const applyMultiHoliday = () => {
     clearMultiSelection();
 };
 
-// MODIFICAT: Logica de calcul a fost inversată (plătit - calculat) pentru a afișa soldul corect
-/* ================== RENDER rapoarte per copil ================== */
-const renderChildrenReports = () => {
-    const container = document.getElementById('childrenReports');
-    container.innerHTML = '';
-    const data = loadData();
-    if (!data.children) data.children = {};
-    const key = `${year}-${month}`;
-    if (!data[key]) data[key] = {
-        days: {}, daysExtra: {}, rates: {}, notes: {}, extraRates: {}, payments: {}, holidays: [], paymentsOnDay: {}
-    };
-
-    let prevMonth = month - 1;
-    let prevYear = year;
-    if (prevMonth < 0) {
-        prevMonth = 11;
-        prevYear -= 1;
-    }
-    const prevKey = `${prevYear}-${prevMonth}`;
-    const prevMonthData = data[prevKey];
-
-    for (const id of Object.keys(data.children)) {
-        if (!data[key].days[id]) data[key].days[id] = [];
-        if (!data[key].daysExtra[id]) data[key].daysExtra[id] = [];
-        if (!data[key].rates[id]) data[key].rates[id] = data.children[id].defaultRate || 15;
-        if (!data[key].extraRates[id]) data[key].extraRates[id] = data.children[id].defaultExtraRate || 0;
-        if (!data[key].payments[id]) data[key].payments[id] = [];
-
-        const daysKindergarten = data[key].days[id].length;
-        const daysExtra = data[key].daysExtra[id].length;
-        const totalKindergarten = daysKindergarten * (data[key].rates[id] || 0);
-        const totalExtra = daysExtra * (data[key].extraRates[id] || 0);
-        const totalCalculatedCurrentMonth = totalKindergarten + totalExtra;
-
-        const totalPaidKindergarten = data[key].payments[id].filter(p => p.type === 'kindergarten').reduce((sum, p) => sum + parseFloat(p.amount), 0);
-        const totalPaidExtra = data[key].payments[id].filter(p => p.type === 'extra').reduce((sum, p) => sum + parseFloat(p.amount), 0);
-        const totalPaidCurrentMonth = totalPaidKindergarten + totalPaidExtra;
-
-        let previousMonthBalance = 0;
-        if (prevMonthData && prevMonthData.days && prevMonthData.payments) {
-            const prevDaysKindergarten = (prevMonthData.days[id] || []).length;
-            const prevRateKindergarten = prevMonthData.rates?.[id] ?? data.children[id].defaultRate;
-            const prevTotalKindergarten = prevDaysKindergarten * prevRateKindergarten;
-
-            const prevDaysExtra = (prevMonthData.daysExtra[id] || []).length;
-            const prevRateExtra = prevMonthData.extraRates?.[id] ?? data.children[id].defaultExtraRate;
-            const prevTotalExtra = prevDaysExtra * prevRateExtra;
-
-            const prevTotalCalculated = prevTotalKindergarten + prevTotalExtra;
-            const prevTotalPaid = (prevMonthData.payments[id] || []).reduce((sum, p) => sum + parseFloat(p.amount), 0);
-
-            // MODIFICAT: Logica inversată: Plătit - Calculat
-            previousMonthBalance = prevTotalPaid - prevTotalCalculated;
-        }
-
-        const totalToPayWithBalance = totalCalculatedCurrentMonth - previousMonthBalance;
-        // MODIFICAT: Logica inversată: Plătit - (Calculat - Sold)
-        const finalDiff = totalPaidCurrentMonth - totalToPayWithBalance;
-
-        const div = document.createElement('div');
-        div.className = 'child-report';
-        div.innerHTML = `
-            <h3>
-                <span>${sanitize(data.children[id].name)}</span>
-                <button style="background:none; color:#2c3e50; font-size:1.4em; padding:0; margin:0;" onclick="showSettingsModal('${id}')">⚙️</button>
-            </h3>
-            <div style="margin-top: 10px;">
-                <strong>Zile Grădiniță:</strong> ${daysKindergarten} (${totalKindergarten.toFixed(2)} lei)
-            </div>
-            <div>
-                <strong>Zile ${sanitize(data.children[id].extraName)}:</strong> ${daysExtra} (${totalExtra.toFixed(2)} lei)
-            </div>
-            <div style="border-top: 1px solid #eee; margin-top: 8px; padding-top: 8px;">
-                <strong>Subtotal luna curentă:</strong> ${totalCalculatedCurrentMonth.toFixed(2)} lei
-            </div>
-            <div style="font-weight: bold; color: ${previousMonthBalance >= 0 ? '#2ecc71' : '#e74c3c'};">
-                Sold lună precedentă: ${previousMonthBalance.toFixed(2)} lei
-            </div>
-            <div style="margin-top: 10px; font-weight: bold; font-size: 1.1em; border-top: 1px solid #ddd; padding-top: 8px;">
-                Total de plată (cu sold): ${totalToPayWithBalance.toFixed(2)} lei
-            </div>
-            <div>
-                Plătit Grădiniță: <a href="#" onclick="showPaymentsModal('${id}')" style="text-decoration:none;">${totalPaidKindergarten.toFixed(2)} lei</a>
-            </div>
-            <div>
-                Plătit ${sanitize(data.children[id].extraName)}: <a href="#" onclick="showPaymentsModal('${id}')" style="text-decoration:none;">${totalPaidExtra.toFixed(2)} lei</a>
-            </div>
-            <div style="font-weight: bold; font-size: 1.1em; color: ${finalDiff >= 0 ? '#2ecc71' : '#e74c3c'}; border-top: 1px solid #ddd; margin-top: 8px; padding-top: 8px;">
-                Balanță finală: ${finalDiff.toFixed(2)} lei
-            </div>
-        `;
-        container.appendChild(div);
-    }
-};
-
-
 /* ================== Child Management (Modals) ================== */
 const addChild = () => {
     const data = loadData();
@@ -973,6 +965,37 @@ const getRandomColor = () => {
     }
     return color;
 };
+
+// NEW HELPER FUNCTION: Calculates the cost for all non-holiday/non-weekend days in a given month.
+const getEstimatedMonthlyKindergartenCost = (y, m, childId, data) => {
+    const key = `${y}-${m}`;
+    const child = data.children[childId];
+    if (!child) return 0;
+
+    const rateKindergarten = data[key]?.rates?.[childId] ?? child.defaultRate;
+
+    // Calculate days in month
+    const daysInMonth = new Date(y, parseInt(m) + 1, 0).getDate();
+    let workingDays = 0;
+
+    for (let d = 1; d <= daysInMonth; d++) {
+        const date = new Date(y, parseInt(m), d);
+        const dayOfWeek = date.getDay(); // 0 = Sunday, 6 = Saturday
+
+        // Check if it's a weekend
+        if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+            // Check if it's an explicitly marked holiday
+            if (!(data[key]?.holidays && data[key].holidays.includes(d))) {
+                workingDays++;
+            }
+        }
+    }
+
+    const estimatedKindergartenCost = workingDays * rateKindergarten;
+
+    return estimatedKindergartenCost;
+};
+
 
 const showSettingsModal = (childId) => {
     selectedChildIdForModal = childId;
@@ -1022,6 +1045,110 @@ const deleteChild = () => {
 };
 
 
+/* ================== RENDER rapoarte per copil - LOGICĂ NOUĂ - FIXAT ================== */
+const renderChildrenReports = () => {
+    const container = document.getElementById('childrenReports');
+    container.innerHTML = '';
+    const data = loadData();
+    if (!data.children) data.children = {};
+    const key = `${year}-${month}`;
+    if (!data[key]) data[key] = {
+        days: {}, daysExtra: {}, rates: {}, notes: {}, extraRates: {}, payments: {}, holidays: [], paymentsOnDay: {}
+    };
+
+    for (const id of Object.keys(data.children)) {
+        // Initialize month-specific data if not present for the child
+        if (!data[key].days) data[key].days = {};
+        if (!data[key].days[id]) data[key].days[id] = [];
+        if (!data[key].daysExtra) data[key].daysExtra = {};
+        if (!data[key].daysExtra[id]) data[key].daysExtra[id] = [];
+        if (!data[key].rates) data[key].rates = {};
+        if (!data[key].rates[id]) data[key].rates[id] = data.children[id].defaultRate || 15;
+        if (!data[key].extraRates) data[key].extraRates = {};
+        if (!data[key].extraRates[id]) data[key].extraRates[id] = data.children[id].defaultExtraRate || 0;
+        if (!data[key].payments) data[key].payments = {};
+        if (!data[key].payments[id]) data[key].payments[id] = [];
+        saveData(data); // Save initializations
+
+        /* === CALCUL SOLD LUNA PRECEDENTĂ (SOLD REPORTAT CUMULATIV) === */
+        // Soldul reportat este soldul cumulativ de la începutul timpului până la sfârșitul lunii precedente.
+        const previousMonthBalance = getHistoricalBalance(year, month, id, data);
+
+        /* === CALCUL LUNA CURENTĂ: COST REAL ȘI PLĂTIT EFECTIV === */
+        const daysKindergarten = data[key].days[id].length;
+        const daysExtra = data[key].daysExtra[id].length;
+        const rateKindergarten = data[key].rates[id];
+        const rateExtra = data[key].extraRates[id];
+
+        const totalKindergarten = daysKindergarten * (rateKindergarten || 0);
+        const totalExtra = daysExtra * (rateExtra || 0);
+        const totalCalculatedCurrentMonth = totalKindergarten + totalExtra; // Cost REAL curent
+
+        const totalPaidKindergartenCurrentMonth = (data[key].payments?.[id] || []).filter(p => p.type === 'kindergarten').reduce((sum, p) => sum + parseFloat(p.amount), 0);
+        const totalPaidExtraCurrentMonth = (data[key].payments?.[id] || []).filter(p => p.type === 'extra').reduce((sum, p) => sum + parseFloat(p.amount), 0);
+        const totalPaidCurrentMonth = totalPaidKindergartenCurrentMonth + totalPaidExtraCurrentMonth; // Total plătit REAL curent
+
+        /* === CALCUL PENTRU PLATĂ (PÂNĂ PE 15) === */
+        // Sumele estimate se bazează pe zilele lucrătoare din luna curentă
+        const estimatedMonthlyKindergartenCost = getEstimatedMonthlyKindergartenCost(year, month, id, data);
+
+        // Suma de plată recomandată (care ar acoperi datoria cumulativă + avansul pe luna curentă):
+        // (Cost Estimare Curentă) - (Sold Reportat)
+        const targetKindergartenPaymentAmount = estimatedMonthlyKindergartenCost - previousMonthBalance;
+        const recommendedKindergartenPayment = Math.max(0, targetKindergartenPaymentAmount); // Suma minimă de plată este 0
+
+        /* === CALCUL BALANȚA FINALĂ (DE REPORTAT PENTRU LUNA VIITOARE) === */
+        // Balanța finală: (Total Plătit Curent + Sold Reportat Precedent) - Cost Real Curent
+        const finalBalance = (totalPaidCurrentMonth + previousMonthBalance) - totalCalculatedCurrentMonth;
+
+
+        const div = document.createElement('div');
+        div.className = 'child-report';
+        div.innerHTML = `
+            <h3>
+                <span>${sanitize(data.children[id].name)}</span>
+                <button style="background:none; color:#2c3e50; font-size:1.4em; padding:0; margin:0;" onclick="showSettingsModal('${id}')">⚙️</button>
+            </h3>
+
+            <div style="font-weight: bold; color: ${previousMonthBalance >= 0 ? '#2ecc71' : '#e74c3c'}; border-bottom: 1px solid #ddd; padding-bottom: 8px; margin-bottom: 12px;">
+                Sold Reportat Cumulativ (la începutul lunii): ${previousMonthBalance.toFixed(2)} lei
+            </div>
+
+            <div style="margin-top: 10px;">
+                <strong>Estimare Cost Grădiniță (Total zile lucrătoare):</strong> ${estimatedMonthlyKindergartenCost.toFixed(2)} lei
+            </div>
+
+            <div style="font-weight: bold; font-size: 1.2em; color: #3498db; margin-top: 8px; border-top: 1px solid #ddd; padding-top: 8px;">
+                SUMA DE PLATĂ RECOMANDATĂ (Până pe 15): ${recommendedKindergartenPayment.toFixed(2)} lei
+            </div>
+
+            <hr style="border: 0; border-top: 5px dotted #eee; margin: 15px 0;" />
+
+            <div>
+                <strong>Cost Real Grădiniță (Prezență):</strong> ${daysKindergarten} zile (${totalKindergarten.toFixed(2)} lei)
+            </div>
+            <div>
+                <strong>Cost Real ${sanitize(data.children[id].extraName)} (Prezență):</strong> ${daysExtra} zile (${totalExtra.toFixed(2)} lei)
+            </div>
+            <div style="border-top: 1px solid #eee; margin-top: 8px; padding-top: 8px;">
+                <strong>TOTAL COST REAL (Calculat):</strong> ${totalCalculatedCurrentMonth.toFixed(2)} lei
+            </div>
+
+            <div style="margin-top: 12px;">
+                <div style="margin-bottom: 4px;"><strong>Total Plătit Grădiniță (luna curentă):</strong> ${totalPaidKindergartenCurrentMonth.toFixed(2)} lei</div>
+                <div><strong>Total Plătit Activitate Suplimentară (luna curentă):</strong> ${totalPaidExtraCurrentMonth.toFixed(2)} lei</div>
+            </div>
+
+            <div style="font-weight: bold; font-size: 1.2em; color: ${finalBalance >= 0 ? '#2ecc71' : '#e74c3c'}; border-top: 1px solid #ddd; margin-top: 12px; padding-top: 12px;">
+                BALANȚA FINALĂ CUMULATIVĂ (de Reportat): ${finalBalance.toFixed(2)} lei
+            </div>
+            <button style="width: 100%; margin-top: 10px; background: #2ecc71;" onclick="showPaymentsModal('${id}')">Vezi/Adaugă Plăți</button>
+        `;
+        container.appendChild(div);
+    }
+};
+
+
 /* ================== Payments Modal ================== */
 const showPaymentsModal = (childId) => {
     selectedChildIdForModal = childId;
@@ -1042,7 +1169,9 @@ const renderPaymentList = () => {
     const paymentList = document.getElementById('paymentList');
     paymentList.innerHTML = '';
 
-    if (!data[key].payments[childId]) {
+    if (!data[key].payments || !data[key].payments[childId]) {
+        // This is a safe guard. Payments should be initialized in renderChildrenReports/renderCalendar.
+        data[key].payments = data[key].payments || {};
         data[key].payments[childId] = [];
     }
 
@@ -1051,9 +1180,10 @@ const renderPaymentList = () => {
 
     data[key].payments[childId].forEach((payment, index) => {
         totalPaid += parseFloat(payment.amount);
+        const paymentTypeLabel = payment.type === 'kindergarten' ? 'Grădiniță' : loadData().children[childId].extraName;
         const li = document.createElement('li');
         li.innerHTML = `
-            <span>${payment.date} - ${parseFloat(payment.amount).toFixed(2)} lei (${payment.type === 'kindergarten' ? 'Grădiniță' : data.children[childId].extraName})</span>
+            <span>${payment.date} - ${parseFloat(payment.amount).toFixed(2)} lei (${sanitize(paymentTypeLabel)})</span>
             <button onclick="deletePayment('${childId}', ${index})">&times;</button>
         `;
         paymentList.appendChild(li);
@@ -1078,6 +1208,8 @@ const addPayment = () => {
     const date = new Date(dateStr);
     const day = date.getDate();
 
+    // FIX (1): Ensure 'payments' and the child's payment array exist
+    if (!data[key].payments) data[key].payments = {};
     if (!data[key].payments[childId]) {
         data[key].payments[childId] = [];
     }
@@ -1153,35 +1285,51 @@ const importJSON = (event) => {
 const exportExcel = () => {
   const data = loadData();
   const rows = [];
+
+  // Iterate through all stored months (keys)
   for(const key of Object.keys(data)){
     if(key === 'children') continue;
-    const [y, m] = key.split('-');
+    const [y, m] = key.split('-').map(v => parseInt(v));
     const monthName = new Date(y, m).toLocaleString('ro-RO', { month: 'long' });
+
     for(const childId of Object.keys(data.children || {})){
-      const kindergartenDays = (data[key].days && data[key].days[childId]) ? data[key].days[childId].length : 0;
-      const kindergartenRate = (data[key].rates && data[key].rates[childId]) ? data[key].rates[childId] : (data.children[childId]?.defaultRate || 0);
-      const extraDays = (data[key].daysExtra && data[key].daysExtra[childId]) ? data[key].daysExtra[childId].length : 0;
-      const extraRate = (data[key].extraRates && data[key].extraRates[childId]) ? data[key].extraRates[childId] : (data.children[childId]?.defaultExtraRate || 0);
+      const monthData = data[key];
+      const childData = data.children[childId];
+
+      // Get Rates
+      const kindergartenRate = monthData.rates?.[childId] ?? childData.defaultRate;
+      const extraRate = monthData.extraRates?.[childId] ?? childData.defaultExtraRate;
+
+      // Current Month Calculations (Real Cost)
+      const kindergartenDays = (monthData.days?.[childId] || []).length;
+      const extraDays = (monthData.daysExtra?.[childId] || []).length;
       const totalKindergarten = kindergartenDays * kindergartenRate;
       const totalExtra = extraDays * extraRate;
-      const totalPaidKindergarten = (data[key].payments[childId] || []).filter(p => p.type === 'kindergarten').reduce((sum, p) => sum + parseFloat(p.amount), 0);
-      const totalPaidExtra = (data[key].payments[childId] || []).filter(p => p.type === 'extra').reduce((sum, p) => sum + parseFloat(p.amount), 0);
+      const totalCalculatedCurrentMonth = totalKindergarten + totalExtra;
 
-      const balanceKindergarten = totalPaidKindergarten - totalKindergarten;
-      const balanceExtra = totalPaidExtra - totalExtra;
+      const totalPaidKindergarten = (monthData.payments?.[childId] || []).filter(p => p.type === 'kindergarten').reduce((sum, p) => sum + parseFloat(p.amount), 0);
+      const totalPaidExtra = (monthData.payments?.[childId] || []).filter(p => p.type === 'extra').reduce((sum, p) => sum + parseFloat(p.amount), 0);
+      const totalPaidCurrentMonth = totalPaidKindergarten + totalPaidExtra;
+
+      // Calculate CUMULATIVE Balance up to the start of the current month (y, m)
+      const previousMonthBalance = getHistoricalBalance(y, m, childId, data);
+
+      // Final Balance (to carry over): (Paid in Current Month + Sold Reportat) - Real Cost Current Month
+      const finalBalance = (totalPaidCurrentMonth + previousMonthBalance) - totalCalculatedCurrentMonth;
+
 
       rows.push({
         An: y,
         Luna: monthName,
-        Copil: data.children[childId].name,
+        Copil: childData.name,
         "Zile Grădiniță": kindergartenDays,
-        "Total Grădiniță": totalKindergarten,
-        "Plătit Grădiniță": totalPaidKindergarten,
-        "Balanță Grădiniță": balanceKindergarten,
-        ["Zile " + data.children[childId].extraName]: extraDays,
-        ["Total " + data.children[childId].extraName]: totalExtra,
-        ["Plătit " + data.children[childId].extraName]: totalPaidExtra,
-        ["Balanță " + data.children[childId].extraName]: balanceExtra
+        "Total Grădiniță (lei)": totalKindergarten.toFixed(2),
+        "Plătit Grădiniță (lei)": totalPaidKindergarten.toFixed(2),
+        ["Zile " + childData.extraName]: extraDays,
+        ["Total " + childData.extraName + " (lei)"]: totalExtra.toFixed(2),
+        ["Plătit " + childData.extraName + " (lei)"]: totalPaidExtra.toFixed(2),
+        "Sold Reportat Cumulativ (lei)": previousMonthBalance.toFixed(2),
+        "Balanță Finală Cumulativă (de Reportat - lei)": finalBalance.toFixed(2)
       });
     }
   }
@@ -1195,32 +1343,51 @@ const exportExcel = () => {
 const exportPDF = () => {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF('l', 'pt', 'a4');
+    // Updated head for new balance logic
     const head = [
-        ['An', 'Luna', 'Copil', 'Total Grăd.', 'Plătit Grăd.', 'Balanță Grăd.', 'Total Act.', 'Plătit Act.', 'Balanță Act.']
+        ['An', 'Lună', 'Copil', 'Cost Grăd.', 'Plătit Grăd.', 'Cost Act.', 'Plătit Act.', 'Sold Reportat Cumulativ', 'Balanță Finală Cumulativă']
     ];
     const rows = [];
     const data = loadData();
 
+    // Iterate through all stored months (keys)
     for (const key of Object.keys(data)) {
         if (key === 'children') continue;
-        const [y, m] = key.split('-');
+        const [y, m] = key.split('-').map(v => parseInt(v));
         const monthName = new Date(y, m).toLocaleString('ro-RO', { month: 'long' });
+
         for (const childId of Object.keys(data.children || {})) {
-            const kindergartenDays = (data[key].days?.[childId] || []).length;
-            const kindergartenRate = data[key].rates?.[childId] ?? data.children[childId]?.defaultRate ?? 0;
-            const extraDays = (data[key].daysExtra?.[childId] || []).length;
-            const extraRate = data[key].extraRates?.[childId] ?? data.children[childId]?.defaultExtraRate ?? 0;
-            const totalKindergarten = kindergartenDays * kindergartenRate;
-            const totalExtra = extraDays * extraRate;
-            const totalPaidKindergarten = (data[key].payments?.[childId] || []).filter(p => p.type === 'kindergarten').reduce((sum, p) => sum + parseFloat(p.amount), 0);
-            const totalPaidExtra = (data[key].payments?.[childId] || []).filter(p => p.type === 'extra').reduce((sum, p) => sum + parseFloat(p.amount), 0);
-            const balanceKindergarten = totalPaidKindergarten - totalKindergarten;
-            const balanceExtra = totalPaidExtra - totalExtra;
+            const childData = data.children[childId];
+            const monthData = data[key];
+
+            // Get Rates
+            const rateKindergarten = monthData.rates?.[childId] ?? (childData.defaultRate || 0);
+            const rateExtra = monthData.extraRates?.[childId] ?? (childData.defaultExtraRate || 0);
+
+            // Current Month Calculations (Real Cost)
+            const kindergartenDays = (monthData.days?.[childId] || []).length;
+            const extraDays = (monthData.daysExtra?.[childId] || []).length;
+            const totalKindergarten = kindergartenDays * rateKindergarten;
+            const totalExtra = extraDays * rateExtra;
+            const totalCalculatedCurrentMonth = totalKindergarten + totalExtra;
+
+            const totalPaidKindergarten = (monthData.payments?.[childId] || []).filter(p => p.type === 'kindergarten').reduce((sum, p) => sum + parseFloat(p.amount), 0);
+            const totalPaidExtra = (monthData.payments?.[childId] || []).filter(p => p.type === 'extra').reduce((sum, p) => sum + parseFloat(p.amount), 0);
+            const totalPaidCurrentMonth = totalPaidKindergarten + totalPaidExtra;
+
+            // Calculate CUMULATIVE Balance up to the start of the current month (y, m)
+            const previousMonthBalance = getHistoricalBalance(y, m, childId, data);
+
+            // Final Balance (to carry over)
+            const finalBalance = (totalPaidCurrentMonth + previousMonthBalance) - totalCalculatedCurrentMonth;
+
 
             rows.push([
-                y, monthName, data.children[childId].name,
-                totalKindergarten.toFixed(2), totalPaidKindergarten.toFixed(2), balanceKindergarten.toFixed(2),
-                totalExtra.toFixed(2), totalPaidExtra.toFixed(2), balanceExtra.toFixed(2)
+                y, monthName, childData.name,
+                totalKindergarten.toFixed(2), totalPaidKindergarten.toFixed(2),
+                totalExtra.toFixed(2), totalPaidExtra.toFixed(2),
+                previousMonthBalance.toFixed(2),
+                finalBalance.toFixed(2)
             ]);
         }
     }
@@ -1334,7 +1501,6 @@ const renderChart = () => {
     });
 };
 
-// MODIFICAT: Funcționalitate actualizată pentru a gestiona selecția multiplă și noile coloane de balanță
 /* ================== Raport general ================== */
 const showGeneralReportModal = () => {
     const reportYearSelect = document.getElementById('reportYearSelect');
@@ -1355,10 +1521,9 @@ const generateGeneralReport = () => {
     const container = document.getElementById('generalReportContainer');
     container.innerHTML = '<h4>Se generează raportul...</h4>';
 
-    const selectedYear = document.getElementById('reportYearSelect').value;
+    const selectedYear = parseInt(document.getElementById('reportYearSelect').value);
     const monthSelect = document.getElementById('reportMonthSelect');
 
-    // MODIFICAT: Colectează toate lunile selectate
     let selectedMonths = Array.from(monthSelect.options)
                                .filter(option => option.selected)
                                .map(option => option.value);
@@ -1366,45 +1531,60 @@ const generateGeneralReport = () => {
     const data = loadData();
     let monthsToReport = [];
 
-    // Dacă este selectat "Toate lunile", se ignoră restul selecțiilor și se iau toate lunile
     if (selectedMonths.includes('-1')) {
         for (let m = 0; m < 12; m++) {
             monthsToReport.push(`${selectedYear}-${m}`);
         }
     } else {
-        monthsToReport = selectedMonths.map(m => `${selectedYear}-${m}`);
+        monthsToReport = selectedMonths.map(m => `${selectedYear}-${parseInt(m)}`);
     }
 
-    // MODIFICAT: Schimbat antetul tabelului
+    // Sortează lunile
+    monthsToReport.sort((a, b) => {
+        const [aY, aM] = a.split('-').map(Number);
+        const [bY, bM] = b.split('-').map(Number);
+        if (aY !== bY) return aY - bY;
+        return aM - bM;
+    });
+
+    // Updated Antet
     let reportHTML = `<table id="generalReportTable"><thead><tr>
         <th>An</th><th>Lună</th><th>Copil</th>
-        <th>Total Grădiniță (lei)</th><th>Plătit Grădiniță (lei)</th><th>Balanță Grădiniță (lei)</th>
-        <th>Total Activitate (lei)</th><th>Plătit Activitate (lei)</th><th>Balanță Activitate (lei)</th>
+        <th>Cost Grădiniță (lei)</th><th>Plătit Grădiniță (lei)</th>
+        <th>Cost Activitate (lei)</th><th>Plătit Activitate (lei)</th>
+        <th>Sold Reportat Cumulativ (lei)</th><th>Balanță Finală Cumulativă (lei)</th>
         </tr></thead><tbody>`;
 
     for (const key of monthsToReport) {
         if (!data[key]) continue;
-        const [y, m] = key.split('-');
+        const [y, m] = key.split('-').map(v => parseInt(v));
         const monthName = new Date(y, m).toLocaleString('ro-RO', { month: 'long' });
 
         for (const childId of Object.keys(data.children || {})) {
             const childData = data.children[childId];
             const monthData = data[key];
 
-            const daysKindergarten = (monthData.days?.[childId] || []).length;
+            // Get Rates
             const rateKindergarten = monthData.rates?.[childId] ?? (childData.defaultRate || 0);
-            const totalKindergarten = daysKindergarten * rateKindergarten;
-
-            const daysExtra = (monthData.daysExtra?.[childId] || []).length;
             const rateExtra = monthData.extraRates?.[childId] ?? (childData.defaultExtraRate || 0);
-            const totalExtra = daysExtra * rateExtra;
+
+            // Current Month Calculations (Real Cost)
+            const kindergartenDays = (monthData.days?.[childId] || []).length;
+            const extraDays = (monthData.daysExtra?.[childId] || []).length;
+            const totalKindergarten = kindergartenDays * rateKindergarten;
+            const totalExtra = extraDays * rateExtra;
+            const totalCalculatedCurrentMonth = totalKindergarten + totalExtra;
 
             const totalPaidKindergarten = (monthData.payments?.[childId] || []).filter(p => p.type === 'kindergarten').reduce((sum, p) => sum + parseFloat(p.amount), 0);
             const totalPaidExtra = (monthData.payments?.[childId] || []).filter(p => p.type === 'extra').reduce((sum, p) => sum + parseFloat(p.amount), 0);
+            const totalPaidCurrentMonth = totalPaidKindergarten + totalPaidExtra;
 
-            // MODIFICAT: Calcul balanță separat și cu logica inversată
-            const balanceKindergarten = totalPaidKindergarten - totalKindergarten;
-            const balanceExtra = totalPaidExtra - totalExtra;
+            // Calculate CUMULATIVE Balance up to the start of the current month (y, m)
+            const previousMonthBalance = getHistoricalBalance(y, m, childId, data);
+
+            // Final Balance (to carry over)
+            const finalBalance = (totalPaidCurrentMonth + previousMonthBalance) - totalCalculatedCurrentMonth;
+
 
             reportHTML += `
                 <tr>
@@ -1413,10 +1593,10 @@ const generateGeneralReport = () => {
                     <td>${sanitize(childData.name)}</td>
                     <td>${totalKindergarten.toFixed(2)}</td>
                     <td>${totalPaidKindergarten.toFixed(2)}</td>
-                    <td style="color: ${balanceKindergarten >= 0 ? '#2ecc71' : '#e74c3c'}; font-weight: bold;">${balanceKindergarten.toFixed(2)}</td>
                     <td>${totalExtra.toFixed(2)}</td>
                     <td>${totalPaidExtra.toFixed(2)}</td>
-                    <td style="color: ${balanceExtra >= 0 ? '#2ecc71' : '#e74c3c'}; font-weight: bold;">${balanceExtra.toFixed(2)}</td>
+                    <td style="color: ${previousMonthBalance >= 0 ? '#2ecc71' : '#e74c3c'}; font-weight: bold;">${previousMonthBalance.toFixed(2)}</td>
+                    <td style="color: ${finalBalance >= 0 ? '#2ecc71' : '#e74c3c'}; font-weight: bold;">${finalBalance.toFixed(2)}</td>
                 </tr>
             `;
         }
@@ -1445,9 +1625,7 @@ const autoBackup = () => {
         data.children = {};
         const id1 = 'c1';
         const id2 = 'c2';
-        data.children[id1] = { name: 'Casian', defaultRate: 15, defaultExtraRate: 20, extraName: 'Engleză', color: '#4da6ff', extraColor: '#9b59b6' };
-        data.children[id2] = { name: 'Ezra', defaultRate: 15, defaultExtraRate: 20, extraName: 'Engleză', color: '#ffd633', extraColor: '#ff6f61' };
-        saveData(data);
+         saveData(data);
     }
 
     document.getElementById('yearSelectNav').value = new Date().getFullYear();
