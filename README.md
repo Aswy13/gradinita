@@ -55,3 +55,7 @@ Aswy deține toate drepturile de comercializare și distribuire.
 🌐 Pagina oficială
 
 🔗 https://github.com/Aswy13/gradinita
+
+📩 Contact
+
+✉️ gradinita@aswy.ro
