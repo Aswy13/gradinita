@@ -10,7 +10,7 @@ Poți adăuga activități suplimentare, gestiona culori personalizate și expor
 
 | Setări copil              | Istoric plăți              | Calendar principal              |
 | ------------------------- | -------------------------- | ------------------------------- |
-| ![Setări copil](img1.png) | ![Istoric plăți](img2.png) | ![Calendar principal](img3.png) |
+| ![Setări copil](img3.png) | ![Istoric plăți](img2.png) | ![Calendar principal](img1.png) |
 
 
 ✨ Funcționalități principale
