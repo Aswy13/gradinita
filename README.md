@@ -2,7 +2,7 @@
 
 Aplicație web simplă și intuitivă pentru gestionarea prezenței și plăților copiilor la grădiniță sau creșă.
 
-<p align="center"> <a href="https://github.com/Aswy13/gradinita"> <img src="https://img.shields.io/badge/Versiune-1.0-blue?style=for-the-badge" /> </a> <a href="mailto:gradinita@aswy.ro"> <img src="https://img.shields.io/badge/Contact-gradinita@aswy.ro-green?style=for-the-badge" /> </a> <a href="https://www.aswy13.github.io/gradinita"> <img src="https://img.shields.io/badge/Website-Aswy13.github.io/gradinita-orange?style=for-the-badge" /> </a> </p>
+<p align="center"> <a href="https://github.com/Aswy13/gradinita"> <img src="https://img.shields.io/badge/Versiune-1.0-blue?style=for-the-badge" /> </a> <a href="mailto:gradinita@aswy.ro"> <img src="https://img.shields.io/badge/Contact-gradinita@aswy.ro-green?style=for-the-badge" /> </a> <a href="https://github.com/Aswy13/gradinita"> <img src="https://img.shields.io/badge/Website-Aswy13.github.io/gradinita-orange?style=for-the-badge" /> </a> </p>
 🎯 Descriere generală
 
 Grădiniță&Creasă este o aplicație creată pentru părinți, pentru a urmări ușor prezența copiilor la grădiniță sau creșă și pentru a calcula automat costurile lunare.
