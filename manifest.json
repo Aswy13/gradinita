@@ -1,7 +1,7 @@
 {
   "name": "Evidenta Gradinita & Cresa",
   "short_name": "Grădiniță",
-  "start_url": "/gradinita.html",
+  "start_url": "/gradinita/",
   "display": "standalone",
   "background_color": "#f0f4f7",
   "theme_color": "#3498db",
