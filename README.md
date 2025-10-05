@@ -8,6 +8,11 @@ Aplicație web simplă și intuitivă pentru gestionarea prezenței și plățil
 Grădiniță&Creasă este o aplicație creată pentru părinți, pentru a urmări ușor prezența copiilor la grădiniță sau creșă și pentru a calcula automat costurile lunare.
 Poți adăuga activități suplimentare, gestiona culori personalizate și exporta datele în mai multe formate.
 
+| Setări copil              | Istoric plăți              | Calendar principal              |
+| ------------------------- | -------------------------- | ------------------------------- |
+| ![Setări copil](img1.png) | ![Istoric plăți](img2.png) | ![Calendar principal](img3.png) |
+
+
 ✨ Funcționalități principale
 
 🗓️ Calendar interactiv lunar pentru marcarea prezenței
