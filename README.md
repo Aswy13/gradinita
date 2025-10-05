@@ -2,20 +2,24 @@
 
 Aplicație web simplă și intuitivă pentru gestionarea prezenței și plăților copiilor la grădiniță sau creșă.
 
-<p align="center"> <img src="img3.png" width="700" alt="Interfață principală" /> </p>
 🎯 Descriere generală
 
 Grădiniță&Creasă este o aplicație creată pentru părinți care doresc să țină evidența prezenței copiilor la grădiniță sau creșă și a costurilor aferente.
 Permite gestionarea mai multor copii, activități suplimentare (ex: engleză, rusă, dans etc.), precum și exportul datelor în formate ușor de utilizat.
 
-🧒 Exemple din interfață
-Setări copil	Istoric plăți	Calendar principal
+| Setări copil              | Istoric plăți              | Calendar principal              |
+| ------------------------- | -------------------------- | ------------------------------- |
+| ![Setări copil](img3.png) | ![Istoric plăți](img2.png) | ![Calendar principal](img1.png) |
+
 
 	
 	
 🪄 Cum se folosește aplicația
 
 Deschide pagina aplicației în browser.
+In functie de versiune este necesar sa se faca un reset de date si sa se streaga copii impliciti Casian si Ezra.
+
+Apoi e nevoie sa se adauge un copil. Apoi se poate da un refres la pagina.
 
 Dă click pe cele trei puncte (⋮) din colțul din dreapta sus al browserului (pe telefon).
 
@@ -28,6 +32,8 @@ Adaugă copiii și activitățile dorite, apoi folosește calendarul pentru a ma
 Poți exporta oricând datele în format PDF, Excel sau JSON.
 
 🔐 Confidențialitate și date colectate
+
+Datele sunt stocate doar pe dispozitiv.
 
 Aplicația nu colectează date personale.
 Singurele informații colectate sunt strict în scop de dezvoltare, pentru a îmbunătăți funcționalitatea aplicației:
