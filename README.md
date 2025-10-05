@@ -2,60 +2,93 @@
 
 Aplicație web simplă și intuitivă pentru gestionarea prezenței și plăților copiilor la grădiniță sau creșă.
 
-<p align="center"> <a href="https://github.com/Aswy13/gradinita"> <img src="https://img.shields.io/badge/Versiune-1.0-blue?style=for-the-badge" /> </a> <a href="mailto:gradinita@aswy.ro"> <img src="https://img.shields.io/badge/Contact-gradinita@aswy.ro-green?style=for-the-badge" /> </a> <a href="https://github.com/Aswy13/gradinita"> <img src="https://img.shields.io/badge/Website-Aswy13.github.io/gradinita-orange?style=for-the-badge" /> </a> </p>
+<p align="center"> <img src="img3.png" width="700" alt="Interfață principală" /> </p>
 🎯 Descriere generală
 
-Grădiniță&Creasă este o aplicație creată pentru părinți, pentru a urmări ușor prezența copiilor la grădiniță sau creșă și pentru a calcula automat costurile lunare.
-Poți adăuga activități suplimentare, gestiona culori personalizate și exporta datele în mai multe formate.
+Grădiniță&Creasă este o aplicație creată pentru părinți care doresc să țină evidența prezenței copiilor la grădiniță sau creșă și a costurilor aferente.
+Permite gestionarea mai multor copii, activități suplimentare (ex: engleză, rusă, dans etc.), precum și exportul datelor în formate ușor de utilizat.
 
-| Setări copil              | Istoric plăți              | Calendar principal              |
-| ------------------------- | -------------------------- | ------------------------------- |
-| ![Setări copil](img3.png) | ![Istoric plăți](img2.png) | ![Calendar principal](img1.png) |
+🧒 Exemple din interfață
+Setări copil	Istoric plăți	Calendar principal
 
+	
+	
+🪄 Cum se folosește aplicația
+
+Deschide pagina aplicației în browser.
+
+Dă click pe cele trei puncte (⋮) din colțul din dreapta sus al browserului (pe telefon).
+
+Alege opțiunea „Adaugă pe ecranul principal” pentru a o instala ca aplicație rapidă (PWA).
+
+După instalare, aplicația poate fi deschisă direct de pe ecran, fără conexiune permanentă la internet.
+
+Adaugă copiii și activitățile dorite, apoi folosește calendarul pentru a marca zilele de prezență.
+
+Poți exporta oricând datele în format PDF, Excel sau JSON.
+
+🔐 Confidențialitate și date colectate
+
+Aplicația nu colectează date personale.
+Singurele informații colectate sunt strict în scop de dezvoltare, pentru a îmbunătăți funcționalitatea aplicației:
+
+numărul total de utilizatori activi
+
+câți copii sunt adăugați în aplicație
+
+câte activități suplimentare sunt definite
+
+👉 Aceste date sunt complet anonime și nu pot fi asociate cu persoane reale.
 
 ✨ Funcționalități principale
 
-🗓️ Calendar interactiv lunar pentru marcarea prezenței
+🗓️ Calendar lunar interactiv
 
-👶 Adăugare / modificare copii
+👶 Adăugare / ștergere copii
 
-🎨 Activități suplimentare (ex: engleză, rusă, dans, etc.)
+🎨 Activități suplimentare personalizate
 
-💰 Calcul automat al costurilor și totalurilor pe lună
+💰 Calcul automat al plăților
 
-📊 Grafic al prezențelor și activităților
+📊 Grafic general și rapoarte lunare
 
-📁 Export și import în formate JSON, Excel și PDF
+📁 Export / Import în JSON, Excel, PDF
 
-💾 Salvare automată locală (nu este nevoie de cont)
+💾 Salvare locală automată (fără cont, fără servere externe)
 
-💬 Sugestii și suport: gradinita@aswy.ro
+💖 Donează pentru proiect
 
+Aplicația este gratuită pentru uz personal.
+Dacă îți este utilă și vrei să sprijini dezvoltarea ei, poți face o mică donație.
+
+<p align="center"> <a href="https://www.aswy13.github.io/gradinita/donate" target="_blank"> <img src="https://img.shields.io/badge/💖%20Donează%20pentru%20proiect-Susține%20dezvoltarea!-pink?style=for-the-badge" /> </a> </p>
 🧱 Tehnologii utilizate
 
 HTML
 
 JavaScript
 
-CSS (interfață minimalistă, clară și intuitivă)
+CSS
 
-💖 Donează pentru proiect
-
-Aplicația este gratuită pentru uz personal. Dacă îți este utilă și vrei să sprijini dezvoltarea ei, poți face o mică donație.
-
-<p align="center"> <a href="https://www.aswy13.github.io/gradinita/donate" target="_blank"> <img src="https://img.shields.io/badge/💖%20Donează%20pentru%20proiect-Susține%20dezvoltarea!-pink?style=for-the-badge" /> </a> </p>
 ⚠️ Licență și drepturi
 
 Aplicația este gratuită pentru uz personal.
 
-Codul sursă este public, dar nu poate fi folosit în scop comercial.
+Codul sursă este public, dar nu poate fi utilizat în scop comercial.
 
 Aswy deține toate drepturile de comercializare și distribuire.
 
-🌐 Pagina oficială
+🌱 Planuri și dezvoltare viitoare
 
-🔗 https://github.com/Aswy13/gradinita
+Aplicația va primi îmbunătățiri treptate, în funcție de timpul liber disponibil.
+Eu însumi sunt părinte și dezvolt această aplicație din dorința de a ajuta alți părinți să își gestioneze mai ușor prezența și plățile copiilor la grădiniță.
+Voi continua să adaug funcționalități noi în funcție de necesități și feedback.
+Mulțumesc tuturor celor care susțin proiectul! ❤️
 
 📩 Contact
 
 ✉️ gradinita@aswy.ro
+
+🌐 Pagina oficială
+
+🔗 https://github.com/Aswy13/gradinita
