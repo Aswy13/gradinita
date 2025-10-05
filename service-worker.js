@@ -1,4 +1,4 @@
-const CACHE_NAME = 'gradinita-cache-v3'; // Schimbă numărul la fiecare actualizare majoră
+const CACHE_NAME = 'gradinita-cache-v2.1'; // Schimbă numărul la fiecare actualizare majoră
 const urlsToCache = [
   'gradinita.html',
   'manifest.json',
