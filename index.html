@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Evidenta Gradinita & Cresa</title>
+<title>Gradinita & Cresa</title>
 
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -25,7 +25,7 @@ body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   margin: 0;
   padding: 0;
-  background: #b3b3b3;
+  background: #f0f4f7;
   color: #333;
   display: flex;
   justify-content: center;
@@ -73,6 +73,14 @@ button {
 }
 button:hover { background: #2980b9; transform: translateY(-1px); }
 .button-group { display: flex; flex-wrap: wrap; justify-content: center; margin-bottom: 12px; }
+.button-group-top {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px; /* Spațiu între cele două butoane */
+    margin-bottom: 12px;
+}
+.button-group-top button { margin: 0; flex: 1; min-width: 200px; }
 
 /* Calendar - grid 7 coloane */
 .calendar {
@@ -211,119 +219,20 @@ input[type="number"], input[type="text"], select {
   cursor: pointer;
 }
 .modal-close:hover, .modal-close:focus { color: #000; text-decoration: none; }
-@keyframes modal-fadein { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-
-/* Stiluri specifice pentru popup */
-.day-popup-section {
-  border-bottom: 1px solid #eee;
-  padding-bottom: 10px;
-  margin-bottom: 10px;
-}
-.day-popup-section h4 { margin: 0 0 10px 0; font-size: 1.1em; }
-.day-popup-section button.active {
-    background: #2ecc71;
-    color: white;
-    border-color: #2ecc71;
-}
-
-/* Legendă culori */
-.legend {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-  justify-content: center;
-  margin-top: 20px;
-  padding: 12px;
-  background: #f8f8f8;
-  border-radius: 12px;
-  border: 1px solid #eee;
-}
-.legend-item { display: flex; gap: 8px; align-items: center; font-size: 14px; }
-.color-box { width: 20px; height: 20px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.08); }
-
-/* Detalii contabile */
-.accounting-section {
-    display: flex;
-    gap: 20px;
-    flex-wrap: wrap;
-    justify-content: center;
-    margin-top: 24px;
-}
-.payment-history {
-    background: #f8f8f8;
-    border: 1px solid #e0e0e0;
-    border-radius: 12px;
-    padding: 16px;
-    flex: 1;
-    min-width: 300px;
-    box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
-}
-.payment-list { list-style-type: none; padding: 0; }
-.payment-list li {
-    background: #fff;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    padding: 8px;
-    margin-bottom: 8px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-.payment-list li button {
-    background: none;
-    border: none;
-    color: #e74c3c;
-    font-size: 1.2em;
-    padding: 0;
-    margin: 0;
-}
-.payment-input-group { display: flex; gap: 8px; }
-
-/* Grafice */
-#chartContainer {
-    max-width: 600px;
-    margin: 20px auto;
-    background: #f8f8f8;
-    padding: 15px;
-    border-radius: 12px;
-    border: 1px solid #e0e0e0;
-}
-
-/* Stiluri pentru raportul general */
-#generalReportContainer {
-    margin-top: 20px;
-    max-height: 60vh;
-    overflow-y: auto;
-}
-#generalReportTable {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 15px;
-}
-#generalReportTable th, #generalReportTable td {
-    border: 1px solid #ddd;
-    padding: 8px;
-    text-align: left;
-}
-#generalReportTable th {
-    background-color: #3498db;
-    color: white;
-    position: sticky;
-    top: 0;
-}
-#generalReportTable tr:nth-child(even) { background-color: #f2f2f2; }
-.report-options {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    align-items: center;
-    margin-bottom: 15px;
+@keyframes modal-fadein { from { opacity: 0; transform {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 12px;
+  }
 }
 
 @media (max-width:768px) {
   .day { min-height:48px; }
   .day-header { padding: 6px 0; }
-  button { width:100%; margin: 6px 0; }
+  /* Modificare: Butoanele de sus vor fi full-width pe mobil */
+  .button-group-top { flex-direction: column; gap: 0; }
+  .button-group-top button { width: 100%; margin: 4px 0; }
   .child-report { min-width:unset; width:100%; }
   .container { padding:16px; margin:10px; }
 }
@@ -339,9 +248,9 @@ input[type="number"], input[type="text"], select {
 <div class="container">
     <div style="display:flex; justify-content:space-between; align-items:center;">
         <div style="flex:1;"></div>
-        <h1>Grădiniță & Creșă </h1>
+        <h1>Prezență Grădiniță</h1>
         <div style="flex:1; text-align:right;">
-            <button style="padding: 8px 12px; margin: 0; background: #000000;" onclick="window.open('https://github.com/aswy13/gradinita', '_blank')">INFO</button>
+            <button style="padding: 8px 12px; margin: 0; background: #95a5a6;" onclick="window.open('https://aswy13.github.io/gradinita/', '_blank')">INFO</button>
         </div>
     </div>
 
@@ -356,6 +265,17 @@ input[type="number"], input[type="text"], select {
     <input type="number" id="yearSelectNav" onchange="changeMonthToSelected()" value="" style="width:80px; text-align:center;" />
     <button onclick="changeMonth(1)">➡</button>
   </div>
+
+  <div class="button-group-top">
+    <button id="multiSelectBtn" style="background: #f39c12;" onclick="toggleMultiSelectMode()">🔗 Activează Selecție Multiplă (Mobil)</button>
+    <button onclick="openMultiDayModal()" style="background: #e67e22;">
+        ✅ Aplică Setările pe Zilele Selectate
+    </button>
+  </div>
+  <div style="text-align:center; margin-bottom:12px;">
+    <div id="multiSelectStatus" style="color: #e67e22; font-weight: bold;"></div>
+  </div>
+
 
   <div id="calendar" class="calendar"></div>
 
@@ -380,8 +300,8 @@ input[type="number"], input[type="text"], select {
   </div>
 
   <div class="legend" id="legend"></div>
-    <div style="text-align: center; margin-top: 20px; color: #ff0000; font-size: 0.9em;">
-        POWER BY ASWY
+    <div style="text-align: center; margin-top: 20px; color: #7f8c8d; font-size: 0.9em;">
+        Aplicație creată de Aswy
     </div>
 </div>
 
@@ -491,6 +411,8 @@ let year = today.getFullYear();
 let selectedDays = [];
 let selectedCell = null;
 let chartInstance = null;
+// NOU: Starea modului de selecție multiplă
+let isMultiSelectMode = false;
 let selectedChildIdForModal = null;
 
 /* ================== HELPER: load/save localStorage ================== */
@@ -529,7 +451,7 @@ const sanitize = (input) => {
  * până la începutul lunii specificate (exclusiv luna curentă).
  *
  * @param {number} currentYear Anul curent (pentru limitare)
- * @param {number} currentMonth Luna curentă (0-11) (pentru limitare)
+ * @param {number} currentMonth Luna curentă (0-11) (pour limitare)
  * @param {string} childId ID-ul copilului
  * @param {object} data Toate datele aplicației
  * @returns {number} Soldul cumulativ (pozitiv = credit, negativ = datorie)
@@ -649,6 +571,12 @@ const updateDayDisplay = (cell, day, monthData) => {
     cell.style.border = '1px solid #ddd';
     cell.style.background = '';
     cell.classList.remove('note-indicator', 'payment-indicator');
+    if (selectedDays.includes(day)) {
+        cell.style.outline = '3px solid #3498db';
+    } else {
+        cell.style.outline = '';
+    }
+
 
     let indicators = cell.querySelector('.indicators');
     if(indicators) indicators.remove();
@@ -736,6 +664,7 @@ const clearMultiSelection = () => {
         if (cell) cell.style.outline = '';
     });
     selectedDays = [];
+    document.getElementById('multiSelectStatus').textContent = '';
 };
 
 const openModal = (modalId) => {
@@ -748,6 +677,20 @@ const closeModal = (modalId) => {
     modal.style.display = 'none';
     if(modalId === 'dayModal') {
         clearMultiSelection();
+    }
+};
+
+// NOU: Deschide modalul pentru zilele deja selectate.
+const openMultiDayModal = () => {
+    if (selectedDays.length > 0) {
+        // Folosim prima zi din selecție pentru a popula eticheta modalului,
+        // dar logica de aplicare va folosi întreg array-ul `selectedDays`.
+        const dayToUse = selectedDays[0];
+        const elCell = document.querySelector(`.day[data-day="${dayToUse}"]`);
+
+        showDayModal(dayToUse, elCell);
+    } else {
+        alert('Vă rugăm selectați cel puțin o zi (folosind tasta Ctrl/Cmd pe desktop sau Modul Multi-Select pe mobil).');
     }
 };
 
@@ -783,6 +726,7 @@ const showDayModal = (day, elCell) => {
         childSelectionButtons.appendChild(childSection);
     }
 
+    // Notița se va aplica pe toate zilele selectate.
     const existingNote = (data[key].notes && data[key].notes[selectedDays[0]]) || '';
     document.getElementById('noteTextarea').value = sanitize(existingNote);
 
@@ -837,35 +781,60 @@ const clearDaySelections = () => {
     clearMultiSelection();
 };
 
+// NOU: Funcție pentru a activa/dezactiva modul de selecție multiplă (UX îmbunătățită)
+const toggleMultiSelectMode = () => {
+    isMultiSelectMode = !isMultiSelectMode;
+    const btn = document.getElementById('multiSelectBtn');
+    const statusDiv = document.getElementById('multiSelectStatus');
+    if (isMultiSelectMode) {
+        btn.textContent = '⛔ Ieși din Modul Multi-Select';
+        btn.style.background = '#e74c3c';
+        statusDiv.textContent = 'Mod activat. Apasă pe zile pentru a selecta.';
+    } else {
+        btn.textContent = '🔗 Activează Selecție Multiplă (Mobil)';
+        btn.style.background = '#f39c12';
+        clearMultiSelection();
+        statusDiv.textContent = '';
+    }
+};
 
-// ================== SELECȚIE MULTIPLĂ CU CTRL - LOGICĂ CORECTATĂ ==================
+// ================== SELECȚIE MULTIPLĂ CU CTRL - LOGICĂ MODIFICATĂ ==================
 const toggleCtrlSelection = (day, elCell, event) => {
-    const isCtrlKey = event.ctrlKey || event.metaKey;
+    // Verificăm Ctrl/Cmd SAU Modul Multi-Select de pe mobil
+    const isCtrlKey = event.ctrlKey || event.metaKey || isMultiSelectMode;
     const index = selectedDays.indexOf(day);
 
     if (isCtrlKey) {
-        // Ctrl Click: Toggle selection and outline. Do nothing else.
+        // Modul de selecție multiplă: Adaugă/elimină ziua din selecție.
         if (index > -1) {
             selectedDays.splice(index, 1);
-            elCell.style.outline = '';
         } else {
             selectedDays.push(day);
-            elCell.style.outline = '3px solid #3498db';
         }
-    } else {
-        // Normal Click: Open modal for the current selection.
 
-        // 1. Check if the click is on a day that is ALREADY part of a multi-selection
-        const isOpeningMulti = selectedDays.length > 1 && index > -1;
+        // Actualizează afișajul celulei
+        updateDayDisplay(elCell, day, loadData()[`${year}-${month}`]);
+
+        // Actualizează mesajul de stare
+        document.getElementById('multiSelectStatus').textContent = `Zile selectate: ${selectedDays.length}`;
+
+        // NU deschide modalul. Utilizatorul va folosi butonul dedicat.
+        return;
+
+    } else {
+        // Click Normal: Dacă nu suntem în modul multi-select, selectăm doar ziua curentă și deschidem modalul.
+
+        // 1. Verifică dacă se încearcă deschiderea modalului pe o selecție multiplă existentă
+        const isOpeningMulti = selectedDays.length > 0 && index > -1;
 
         if (!isOpeningMulti) {
-            // 2. If it's a new single-day click, clear previous selection and highlight only this day.
-            clearMultiSelection(); // Clearing selection outline
+            // 2. Dacă e un click simplu nou, se șterge selecția precedentă și se selectează ziua curentă
+            clearMultiSelection();
             selectedDays = [day];
-            elCell.style.outline = '3px solid #3498db';
+            updateDayDisplay(elCell, day, loadData()[`${year}-${month}`]);
         }
 
-        // 3. Open the modal with the current selectedDays list.
+        // 3. Deschide modalul.
         showDayModal(day, elCell);
     }
 };
@@ -1625,7 +1594,9 @@ const autoBackup = () => {
         data.children = {};
         const id1 = 'c1';
         const id2 = 'c2';
-         saveData(data);
+        data.children[id1] = { name: 'Casian', defaultRate: 15, defaultExtraRate: 20, extraName: 'Engleză', color: '#4da6ff', extraColor: '#9b59b6' };
+        data.children[id2] = { name: 'Ezra', defaultRate: 15, defaultExtraRate: 20, extraName: 'Engleză', color: '#ffd633', extraColor: '#ff6f61' };
+        saveData(data);
     }
 
     document.getElementById('yearSelectNav').value = new Date().getFullYear();
@@ -1635,7 +1606,8 @@ const autoBackup = () => {
 
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/service-worker.js')
+            // Presupunând că service-worker.js există în același director sau este configurat corespunzător
+            navigator.serviceWorker.register('service-worker.js')
                 .then(registration => console.log('ServiceWorker registration successful'))
                 .catch(error => console.log('ServiceWorker registration failed: ', error));
         });
