@@ -29,7 +29,6 @@
 </script>
 
 <style>
-
 /* --- Layout general --- */
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -354,14 +353,57 @@ input[type="number"], input[type="text"], select {
     border: 1px solid rgba(0,0,0,0.1); /* Margine subțire pentru vizibilitate */
 }
 
-@media (max-width:768px) {
-  .day { min-height:48px; }
+@media (max-width: 768px) {
+  /* Reguli existente */
+  .day { min-height: 48px; }
   .day-header { padding: 6px 0; }
-  /* Modificare: Butoanele de sus vor fi full-width pe mobil */
   .button-group-top { flex-direction: column; gap: 0; }
   .button-group-top button { width: 100%; margin: 4px 0; }
-  .child-report { min-width:unset; width:100%; }
-  .container { padding:16px; margin:10px; }
+  .child-report { min-width: unset; width: 100%; }
+  .container { padding: 16px; margin: 10px; }
+
+  /* --- NOI ADAUGIRI PENTRU RESPONSIVITATE --- */
+
+  /* Aranjarea antetului principal (titlu si butoane info/share) */
+  .main-header {
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 15px; /* Spațiu sub butoane */
+  }
+  .main-header h1 {
+      width: 100%;
+      order: 1; /* Titlul apare primul */
+      font-size: 1.8em; /* Reducem mărimea titlului */
+      margin-bottom: 10px;
+  }
+  .main-header > div:first-of-type {
+      display: none; /* Ascundem spațiul gol din stânga */
+  }
+  .main-header > div:last-of-type {
+      width: 100%;
+      order: 2; /* Butoanele apar sub titlu */
+      justify-content: center; /* Centram butoanele */
+  }
+
+  /* Reducem mărimea generală a butoanelor și a textului din ele */
+  button {
+      font-size: 15px;
+      padding: 9px 15px;
+  }
+
+  /* Optimizarea selectorului de lună și an */
+  #monthSelectNav, #yearSelectNav {
+      padding: 6px 4px;
+      font-size: 15px;
+  }
+  #yearSelectNav {
+      width: 70px; /* Micșorăm lățimea câmpului pentru an */
+  }
+
+  /* Optimizarea modalelor (pop-up) */
+  .modal-content {
+      padding: 16px;
+  }
 }
 </style>
 
@@ -373,13 +415,13 @@ input[type="number"], input[type="text"], select {
 </head>
 <body>
 <div class="container">
-    <div style="display:flex; justify-content:space-between; align-items:center;">
+    <div class="main-header" style="display:flex; justify-content:space-between; align-items:center;">
         <div style="flex:1;"></div>
         <h1>Gradinita&Creasa</h1>
         <div style="flex:1; text-align:right; display:flex; gap:8px; justify-content:flex-end;">
             <button onclick="showDonationModal()" style="padding: 8px 12px; margin: 0; background: #2ecc71;">💸 Donații</button>
             <button onclick="shareApp()" style="padding: 8px 12px; margin: 0; background: #3498db;">🔗 Partajează</button>
-            <button style="padding: 8px 12px; margin: 0; background: #95a5a6;" onclick="window.open('https://aswy13.github.io/gradinita/', '_blank')">INFO</button>
+            <button style="padding: 8px 12px; margin: 0; background: #95a5a6;" onclick="window.open('https://github.com/Aswy13/gradinita', '_blank')">INFO</button>
         </div>
     </div>
 
@@ -549,7 +591,7 @@ let selectedChildIdForModal = null;
 const showDonationModal = () => {
     // INLOCUIESTE CU IBAN-UL TAU REAL
     const iban = "RO31INGB0000999901856836";
-    const message = `Mulțumesc pentru suport!\n\nIBAN: ${iban}\nBanca: ING BANK `;
+    const message = `Mulțumesc pentru suport!\n\nIBAN: ${iban}\nBanca: ING Bank\nTitular: [Aswy]`;
     alert(message);
 };
 
