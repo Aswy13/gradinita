@@ -17,15 +17,16 @@ Permite gestionarea mai multor copii, activități suplimentare (ex: engleză, r
 🪄 Cum se folosește aplicația
 
 Deschide pagina aplicației în browser.
-In functie de versiune este necesar sa se faca un reset de date si sa se streaga copii impliciti Casian si Ezra.
-
-Apoi e nevoie sa se adauge un copil. Apoi se poate da un refres la pagina.
 
 Dă click pe cele trei puncte (⋮) din colțul din dreapta sus al browserului (pe telefon).
 
 Alege opțiunea „Adaugă pe ecranul principal” pentru a o instala ca aplicație rapidă (PWA).
 
 După instalare, aplicația poate fi deschisă direct de pe ecran, fără conexiune permanentă la internet.
+
+In functie de versiune este necesar sa se faca un reset de date si sa se streaga copiii initiali Casian si Ezra.
+
+Apoi e nevoie sa se adauge un copil. Apoi se poate da un refres la pagina.
 
 Adaugă copiii și activitățile dorite, apoi folosește calendarul pentru a marca zilele de prezență.
 
