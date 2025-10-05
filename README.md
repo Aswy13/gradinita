@@ -64,10 +64,19 @@ câte activități suplimentare sunt definite
 
 💖 Donează pentru proiect
 
-Aplicația este gratuită pentru uz personal.
-Dacă îți este utilă și vrei să sprijini dezvoltarea ei, poți face o mică donație.
+Aplicația este gratuită pentru uz personal.  
+Dacă îți este utilă și vrei să sprijini dezvoltarea ei, poți face o mică donație direct în contul de mai jos:
 
-<p align="center"> <a href="https://www.aswy13.github.io/gradinita/donate" target="_blank"> <img src="https://img.shields.io/badge/💖%20Donează%20pentru%20proiect-Susține%20dezvoltarea!-pink?style=for-the-badge" /> </a> </p>
+<p align="center">
+  <img src="https://img.shields.io/badge/💖%20Donează%20pentru%20proiect-Susține%20dezvoltarea!-pink?style=for-the-badge" />
+</p>
+
+<p align="center">
+  <b>IBAN pentru donații:</b><br>
+  <code>RO31INGB0000999901856836</code>  
+  <br>(Aswy)
+</p>
+
 🧱 Tehnologii utilizate
 
 HTML
