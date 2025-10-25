@@ -10,11 +10,12 @@ let selectedChildIdForModal = null;
 /* ================== NOTIFICĂRI ================== */
 class NotificationManager {
     static show(message, type = 'info', duration = 3000) {
+        // Elimină notificările vechi
         const oldNotifications = document.querySelectorAll('.custom-notification');
         oldNotifications.forEach(n => n.remove());
 
         const notification = document.createElement('div');
-        notification.className = `custom-notification`;
+        notification.className = 'custom-notification';
         notification.innerHTML = `
         <span>${message}</span>
         <button onclick="this.parentElement.remove()">×</button>
@@ -31,12 +32,23 @@ class NotificationManager {
         document.body.appendChild(notification);
 
         setTimeout(() => {
-            if (notification.parentElement) notification.remove();
+            if (notification.parentElement) {
+                notification.remove();
+            }
         }, duration);
     }
 }
 
 /* ================== FUNCȚII DE BAZĂ ================== */
+const getRandomColor = () => {
+    const letters = '0123456789ABCDEF';
+    let color = '#';
+    for (let i = 0; i < 6; i++) {
+        color += letters[Math.floor(Math.random() * 16)];
+    }
+    return color;
+};
+
 const migrateData = (data) => {
     if (!data.children) data.children = {};
 
@@ -115,6 +127,7 @@ const renderCalendar = () => {
         saveData(data);
     }
 
+    // Header zile săptămânii
     const weekdays = ['Lu', 'Ma', 'Mi', 'Jo', 'Vi', 'Sa', 'Du'];
     weekdays.forEach((w, idx) => {
         const el = document.createElement('div');
@@ -145,6 +158,7 @@ const renderCalendar = () => {
         calendar.appendChild(day);
     }
 
+    // Actualizează controalele de navigare
     const monthSelect = document.getElementById('monthSelectNav');
     const yearSelect = document.getElementById('yearSelectNav');
     if (monthSelect) monthSelect.value = month;
@@ -165,6 +179,7 @@ const updateDayDisplay = (cell, day, monthData) => {
 
     if (!monthData) return;
 
+    // Note
     if (monthData.notes && monthData.notes[day]) {
         cell.classList.add('note-indicator');
         cell.title = `Notiță: ${sanitize(monthData.notes[day])}`;
@@ -172,6 +187,7 @@ const updateDayDisplay = (cell, day, monthData) => {
         cell.classList.remove('note-indicator');
     }
 
+    // Zile libere
     if (monthData.holidays && monthData.holidays.includes(day)) {
         cell.classList.add('holiday');
         if (!cell.title) cell.title = "Zi liberă";
@@ -180,6 +196,7 @@ const updateDayDisplay = (cell, day, monthData) => {
         cell.classList.remove('holiday');
     }
 
+    // Zile fără plată
     if (monthData.freeDays && monthData.freeDays[day]) {
         cell.classList.add('free-day');
         cell.title = "Zi fără plată (absentență/vacanță)";
@@ -200,7 +217,7 @@ const updateDayDisplay = (cell, day, monthData) => {
             continue;
         }
 
-        if (!isFreeForChild && monthData.days[childId] && monthData.days[childId].includes(day)) {
+        if (!isFreeForChild && monthData.days && monthData.days[childId] && monthData.days[childId].includes(day)) {
             const indicator = document.createElement('div');
             indicator.className = 'indicator';
             indicator.style.backgroundColor = child.color || '#3498db';
@@ -301,16 +318,25 @@ const toggleCtrlSelection = (day, elCell, event) => {
 };
 
 const showDayModal = (day, elCell) => {
-    document.getElementById('modalDayNumber').textContent = selectedDays.length > 1 ? selectedDays.join(', ') : day;
+    const modalDayNumber = document.getElementById('modalDayNumber');
+    if (modalDayNumber) {
+        modalDayNumber.textContent = selectedDays.length > 1 ? selectedDays.join(', ') : day;
+    }
+
     const data = loadData();
     const key = `${year}-${month}`;
     const children = data.children || {};
     const childSelectionButtons = document.getElementById('childSelectionButtons');
+
+    if (!childSelectionButtons) return;
+
     childSelectionButtons.innerHTML = '';
 
+    // Butoane generale
     const generalButtons = document.createElement('div');
     generalButtons.className = 'general-buttons';
 
+    // Buton zi fără plată pentru toți copiii
     const isFreeDay = data[key].freeDays && data[key].freeDays[day];
     const freeDayBtn = document.createElement('button');
     freeDayBtn.textContent = selectedDays.every(d => data[key].freeDays && data[key].freeDays[d]) ?
@@ -322,9 +348,10 @@ const showDayModal = (day, elCell) => {
 
     childSelectionButtons.appendChild(generalButtons);
 
+    // Butoane pentru fiecare copil
     for (const id of Object.keys(children)) {
         const child = children[id];
-        const isKindergartenActive = selectedDays.every(d => data[key].days[id] && data[key].days[id].includes(d));
+        const isKindergartenActive = selectedDays.every(d => data[key].days && data[key].days[id] && data[key].days[id].includes(d));
         const isFreeForChild = selectedDays.every(d =>
         data[key].freeDays && data[key].freeDays[d] && data[key].freeDays[d].includes(id)
         );
@@ -342,6 +369,7 @@ const showDayModal = (day, elCell) => {
         </button>
         `;
 
+        // Activități suplimentare
         const activities = child.extraActivities || [];
         activities.forEach((activity, index) => {
             if (activity.enabled) {
@@ -362,19 +390,23 @@ const showDayModal = (day, elCell) => {
             }
         });
 
+        // Buton pentru zi fără plată individuală
         childSection.innerHTML += `
         <button class="${isFreeForChild ? 'active' : ''} free-day-btn"
         onclick="toggleFreeDayForChild('${id}')">
         ${isFreeForChild ? '✅ Fără plată' : '🆓 Marchează fără plată'}
         </button>
-        `;
-
-        childSection.innerHTML += `</div></div>`;
+        </div>
+        </div>`;
         childSelectionButtons.appendChild(childSection);
     }
 
-    const existingNote = (data[key].notes && data[key].notes[selectedDays[0]]) || '';
-    document.getElementById('noteTextarea').value = sanitize(existingNote);
+    // Notiță existentă
+    const noteTextarea = document.getElementById('noteTextarea');
+    if (noteTextarea) {
+        const existingNote = (data[key].notes && data[key].notes[selectedDays[0]]) || '';
+        noteTextarea.value = sanitize(existingNote);
+    }
 
     openModal('dayModal');
 };
@@ -384,6 +416,9 @@ const reRenderModalButtons = () => {
     const key = `${year}-${month}`;
     const children = data.children || {};
     const childSelectionButtons = document.getElementById('childSelectionButtons');
+
+    if (!childSelectionButtons) return;
+
     childSelectionButtons.innerHTML = '';
 
     const day = selectedDays[0];
@@ -403,7 +438,7 @@ const reRenderModalButtons = () => {
 
     for (const id of Object.keys(children)) {
         const child = children[id];
-        const isKindergartenActive = selectedDays.every(d => data[key].days[id] && data[key].days[id].includes(d));
+        const isKindergartenActive = selectedDays.every(d => data[key].days && data[key].days[id] && data[key].days[id].includes(d));
         const isFreeForChild = selectedDays.every(d =>
         data[key].freeDays && data[key].freeDays[d] && data[key].freeDays[d].includes(id)
         );
@@ -446,7 +481,8 @@ const reRenderModalButtons = () => {
         onclick="toggleFreeDayForChild('${id}')">
         ${isFreeForChild ? '✅ Fără plată' : '🆓 Marchează fără plată'}
         </button>
-        </div></div>`;
+        </div>
+        </div>`;
         childSelectionButtons.appendChild(childSection);
     }
 };
@@ -496,11 +532,91 @@ const applyMultiPresence = (childId, type, activityIndex = null) => {
     reRenderModalButtons();
 };
 
+const applyMultiFreeDay = () => {
+    const data = loadData();
+    const key = `${year}-${month}`;
+    if (!data[key].freeDays) data[key].freeDays = {};
+
+    const isTogglingOn = !selectedDays.every(d => data[key].freeDays && data[key].freeDays[d]);
+
+    selectedDays.forEach(d => {
+        if (isTogglingOn) {
+            const allChildIds = Object.keys(data.children || {});
+            data[key].freeDays[d] = allChildIds;
+
+            for(const childId in data.children){
+                if (data[key].days && data[key].days[childId]) {
+                    data[key].days[childId] = data[key].days[childId].filter(day => day !== d);
+                }
+                if (data[key].daysExtra && data[key].daysExtra[childId]) {
+                    data[key].daysExtra[childId] = data[key].daysExtra[childId].map(activityDays =>
+                    activityDays.filter(day => day !== d)
+                    );
+                }
+            }
+
+            if (data[key].holidays && data[key].holidays.includes(d)) {
+                data[key].holidays = data[key].holidays.filter(h => h !== d);
+            }
+        } else {
+            delete data[key].freeDays[d];
+        }
+    });
+
+    saveData(data);
+    renderCalendar();
+    reRenderModalButtons();
+    NotificationManager.show(isTogglingOn ? 'Zile marcate ca fără plată!' : 'Zilele nu mai sunt fără plată!', 'success');
+};
+
+const toggleFreeDayForChild = (childId) => {
+    const data = loadData();
+    const key = `${year}-${month}`;
+    if (!data[key].freeDays) data[key].freeDays = {};
+
+    const isTogglingOn = !selectedDays.every(d =>
+    data[key].freeDays && data[key].freeDays[d] && data[key].freeDays[d].includes(childId)
+    );
+
+    selectedDays.forEach(d => {
+        if (!data[key].freeDays[d]) data[key].freeDays[d] = [];
+
+        if (isTogglingOn) {
+            if (!data[key].freeDays[d].includes(childId)) {
+                data[key].freeDays[d].push(childId);
+            }
+
+            if (data[key].days && data[key].days[childId]) {
+                data[key].days[childId] = data[key].days[childId].filter(day => day !== d);
+            }
+            if (data[key].daysExtra && data[key].daysExtra[childId]) {
+                data[key].daysExtra[childId] = data[key].daysExtra[childId].map(activityDays =>
+                activityDays.filter(day => day !== d)
+                );
+            }
+        } else {
+            data[key].freeDays[d] = data[key].freeDays[d].filter(id => id !== childId);
+            if (data[key].freeDays[d].length === 0) {
+                delete data[key].freeDays[d];
+            }
+        }
+    });
+
+    saveData(data);
+    renderCalendar();
+    reRenderModalButtons();
+    NotificationManager.show(isTogglingOn ? 'Zile marcate ca fără plată pentru copil!' : 'Zilele nu mai sunt fără plată pentru copil!', 'success');
+};
+
 const saveNote = () => {
     const data = loadData();
     const key = `${year}-${month}`;
     if (!data[key].notes) data[key].notes = {};
-    const note = document.getElementById('noteTextarea').value.trim();
+
+    const noteTextarea = document.getElementById('noteTextarea');
+    if (!noteTextarea) return;
+
+    const note = noteTextarea.value.trim();
 
     if (note) {
         selectedDays.forEach(d => {
@@ -525,10 +641,10 @@ const clearDaySelections = () => {
 
     selectedDays.forEach(d => {
         for(const childId in data.children){
-            if (data[key].days[childId]) {
+            if (data[key].days && data[key].days[childId]) {
                 data[key].days[childId] = data[key].days[childId].filter(day => day !== d);
             }
-            if (data[key].daysExtra[childId]) {
+            if (data[key].daysExtra && data[key].daysExtra[childId]) {
                 data[key].daysExtra[childId] = data[key].daysExtra[childId].map(activityDays =>
                 activityDays.filter(day => day !== d)
                 );
@@ -570,26 +686,24 @@ const addChild = () => {
     NotificationManager.show('Copil nou adăugat!', 'success');
 };
 
-const getRandomColor = () => {
-    const letters = '0123456789ABCDEF';
-    let color = '#';
-    for (let i = 0; i < 6; i++) {
-        color += letters[Math.floor(Math.random() * 16)];
-    }
-    return color;
-};
-
 const showSettingsModal = (childId) => {
     selectedChildIdForModal = childId;
     const data = loadData();
     const child = data.children[childId];
 
-    document.getElementById('settingsChildName').textContent = sanitize(child.name);
-    document.getElementById('editChildName').value = sanitize(child.name);
-    document.getElementById('editInstitution').value = child.institution || 'Grădiniță';
-    document.getElementById('editStartDate').value = child.startDate || new Date().toISOString().split('T')[0];
-    document.getElementById('editDefaultRate').value = child.defaultRate || 15;
-    document.getElementById('editChildColor').value = child.color || '#3498db';
+    const settingsChildName = document.getElementById('settingsChildName');
+    const editChildName = document.getElementById('editChildName');
+    const editInstitution = document.getElementById('editInstitution');
+    const editStartDate = document.getElementById('editStartDate');
+    const editDefaultRate = document.getElementById('editDefaultRate');
+    const editChildColor = document.getElementById('editChildColor');
+
+    if (settingsChildName) settingsChildName.textContent = sanitize(child.name);
+    if (editChildName) editChildName.value = sanitize(child.name);
+    if (editInstitution) editInstitution.value = child.institution || 'Grădiniță';
+    if (editStartDate) editStartDate.value = child.startDate || new Date().toISOString().split('T')[0];
+    if (editDefaultRate) editDefaultRate.value = child.defaultRate || 15;
+    if (editChildColor) editChildColor.value = child.color || '#3498db';
 
     renderExtraActivities(child.extraActivities || []);
     openModal('settingsModal');
@@ -597,6 +711,8 @@ const showSettingsModal = (childId) => {
 
 const renderExtraActivities = (activities) => {
     const container = document.getElementById('extraActivitiesContainer');
+    if (!container) return;
+
     container.innerHTML = '';
 
     activities.forEach((activity, index) => {
@@ -624,7 +740,7 @@ const renderExtraActivities = (activities) => {
 const toggleExtraActivity = (index, enabled) => {
     const data = loadData();
     const childId = selectedChildIdForModal;
-    if (data.children[childId].extraActivities[index]) {
+    if (data.children[childId] && data.children[childId].extraActivities[index]) {
         data.children[childId].extraActivities[index].enabled = enabled;
         saveData(data);
     }
@@ -633,7 +749,7 @@ const toggleExtraActivity = (index, enabled) => {
 const updateExtraActivity = (index, field, value) => {
     const data = loadData();
     const childId = selectedChildIdForModal;
-    if (data.children[childId].extraActivities[index]) {
+    if (data.children[childId] && data.children[childId].extraActivities[index]) {
         data.children[childId].extraActivities[index][field] = value;
         saveData(data);
     }
@@ -643,25 +759,29 @@ const removeExtraActivity = (index) => {
     if (confirm('Sigur vrei să ștergi această activitate?')) {
         const data = loadData();
         const childId = selectedChildIdForModal;
-        data.children[childId].extraActivities.splice(index, 1);
-        saveData(data);
-        renderExtraActivities(data.children[childId].extraActivities);
-        NotificationManager.show('Activitate ștearsă!', 'success');
+        if (data.children[childId]) {
+            data.children[childId].extraActivities.splice(index, 1);
+            saveData(data);
+            renderExtraActivities(data.children[childId].extraActivities);
+            NotificationManager.show('Activitate ștearsă!', 'success');
+        }
     }
 };
 
 const addNewExtraActivity = () => {
     const data = loadData();
     const childId = selectedChildIdForModal;
-    const newActivity = {
-        name: 'Activitate Nouă',
-        rate: 20,
-        color: getRandomColor(),
-        enabled: true
-    };
-    data.children[childId].extraActivities.push(newActivity);
-    saveData(data);
-    renderExtraActivities(data.children[childId].extraActivities);
+    if (data.children[childId]) {
+        const newActivity = {
+            name: 'Activitate Nouă',
+            rate: 20,
+            color: getRandomColor(),
+            enabled: true
+        };
+        data.children[childId].extraActivities.push(newActivity);
+        saveData(data);
+        renderExtraActivities(data.children[childId].extraActivities);
+    }
 };
 
 const saveChildSettings = () => {
@@ -669,19 +789,27 @@ const saveChildSettings = () => {
     const childId = selectedChildIdForModal;
     if (!data.children[childId]) return;
 
-    const newName = document.getElementById('editChildName').value.trim();
+    const editChildName = document.getElementById('editChildName');
+    const editInstitution = document.getElementById('editInstitution');
+    const editStartDate = document.getElementById('editStartDate');
+    const editDefaultRate = document.getElementById('editDefaultRate');
+    const editChildColor = document.getElementById('editChildColor');
+
+    if (!editChildName) return;
+
+    const newName = editChildName.value.trim();
     if (!newName) {
         NotificationManager.show('Numele copilului este obligatoriu', 'error');
         return;
     }
 
-    const newRate = parseFloat(document.getElementById('editDefaultRate').value) || 15;
+    const newRate = parseFloat(editDefaultRate?.value) || 15;
 
     data.children[childId].name = sanitize(newName);
-    data.children[childId].institution = document.getElementById('editInstitution').value;
-    data.children[childId].startDate = document.getElementById('editStartDate').value;
+    if (editInstitution) data.children[childId].institution = editInstitution.value;
+    if (editStartDate) data.children[childId].startDate = editStartDate.value;
     data.children[childId].defaultRate = newRate;
-    data.children[childId].color = document.getElementById('editChildColor').value;
+    if (editChildColor) data.children[childId].color = editChildColor.value;
 
     const key = `${year}-${month}`;
     if (!data[key]) {
@@ -737,9 +865,14 @@ const renderChildrenReports = () => {
         const child = data.children[id];
         const rateKindergarten = data[key].rates?.[id] ?? child.defaultRate;
 
+        // Inițializează datele pentru luna curentă
+        if (!data[key].days) data[key].days = {};
         if (!data[key].days[id]) data[key].days[id] = [];
+        if (!data[key].daysExtra) data[key].daysExtra = {};
         if (!data[key].daysExtra[id]) data[key].daysExtra[id] = [];
+        if (!data[key].rates) data[key].rates = {};
         if (!data[key].rates[id]) data[key].rates[id] = rateKindergarten;
+        if (!data[key].payments) data[key].payments = {};
         if (!data[key].payments[id]) data[key].payments[id] = [];
         if (!data[key].freeDays) data[key].freeDays = {};
         saveData(data);
@@ -785,8 +918,8 @@ const renderChildrenReports = () => {
 
         const totalCalculatedCurrentMonth = totalKindergarten + totalExtra;
 
-        const totalPaidKindergartenCurrentMonth = (data[key].payments[id] || []).filter(p => p.type === 'kindergarten').reduce((sum, p) => sum + parseFloat(p.amount), 0);
-        const totalPaidExtraCurrentMonth = (data[key].payments[id] || []).filter(p => p.type === 'extra').reduce((sum, p) => sum + parseFloat(p.amount), 0);
+        const totalPaidKindergartenCurrentMonth = (data[key].payments && data[key].payments[id] ? data[key].payments[id].filter(p => p.type === 'kindergarten') : []).reduce((sum, p) => sum + parseFloat(p.amount), 0);
+        const totalPaidExtraCurrentMonth = (data[key].payments && data[key].payments[id] ? data[key].payments[id].filter(p => p.type === 'extra') : []).reduce((sum, p) => sum + parseFloat(p.amount), 0);
         const totalPaidCurrentMonth = totalPaidKindergartenCurrentMonth + totalPaidExtraCurrentMonth;
 
         const estimatedMonthlyKindergartenCost = getEstimatedMonthlyKindergartenCost(year, month, id, data);
@@ -872,13 +1005,18 @@ const showPaymentsModal = (childId) => {
     selectedChildIdForModal = childId;
     const data = loadData();
     const key = `${year}-${month}`;
-    const childName = data.children[childId].name;
+    const childName = data.children[childId]?.name || 'Necunoscut';
     const monthName = new Date(year, month).toLocaleString('ro-RO', { month: 'long' });
 
-    document.getElementById('paymentsChildName').textContent = sanitize(childName);
-    document.getElementById('paymentsMonth').textContent = monthName;
-    document.getElementById('newPaymentDate').value = new Date().toISOString().split('T')[0];
-    document.getElementById('newPaymentAmount').value = '';
+    const paymentsChildName = document.getElementById('paymentsChildName');
+    const paymentsMonth = document.getElementById('paymentsMonth');
+    const newPaymentDate = document.getElementById('newPaymentDate');
+    const newPaymentAmount = document.getElementById('newPaymentAmount');
+
+    if (paymentsChildName) paymentsChildName.textContent = sanitize(childName);
+    if (paymentsMonth) paymentsMonth.textContent = monthName;
+    if (newPaymentDate) newPaymentDate.value = new Date().toISOString().split('T')[0];
+    if (newPaymentAmount) newPaymentAmount.value = '';
 
     renderPaymentList();
     openModal('paymentsModal');
@@ -889,6 +1027,10 @@ const renderPaymentList = () => {
     const key = `${year}-${month}`;
     const childId = selectedChildIdForModal;
     const paymentList = document.getElementById('paymentList');
+    const paymentsTotal = document.getElementById('paymentsTotal');
+
+    if (!paymentList) return;
+
     paymentList.innerHTML = '';
 
     if (!data[key].payments || !data[key].payments[childId]) {
@@ -902,7 +1044,7 @@ const renderPaymentList = () => {
     data[key].payments[childId].forEach((payment, index) => {
         totalPaid += parseFloat(payment.amount);
         const paymentTypeLabel = payment.type === 'kindergarten' ?
-        (data.children[childId].institution || 'Grădiniță') : 'Activitate Suplimentară';
+        (data.children[childId]?.institution || 'Grădiniță') : 'Activitate Suplimentară';
 
         const li = document.createElement('li');
         li.innerHTML = `
@@ -912,16 +1054,26 @@ const renderPaymentList = () => {
         paymentList.appendChild(li);
     });
 
-    document.getElementById('paymentsTotal').textContent = totalPaid.toFixed(2);
+    if (paymentsTotal) {
+        paymentsTotal.textContent = totalPaid.toFixed(2);
+    }
 };
 
 const addPayment = () => {
     const data = loadData();
     const key = `${year}-${month}`;
     const childId = selectedChildIdForModal;
-    const amount = parseFloat(document.getElementById('newPaymentAmount').value);
-    const dateStr = document.getElementById('newPaymentDate').value;
-    const type = document.getElementById('newPaymentType').value;
+
+    const newPaymentAmount = document.getElementById('newPaymentAmount');
+    const newPaymentDate = document.getElementById('newPaymentDate');
+    const newPaymentType = document.getElementById('newPaymentType');
+    const newPaymentColor = document.getElementById('newPaymentColor');
+
+    if (!newPaymentAmount || !newPaymentDate || !newPaymentType) return;
+
+    const amount = parseFloat(newPaymentAmount.value);
+    const dateStr = newPaymentDate.value;
+    const type = newPaymentType.value;
 
     if (isNaN(amount) || amount <= 0) {
         NotificationManager.show('Suma trebuie să fie pozitivă', 'error');
@@ -941,7 +1093,7 @@ const addPayment = () => {
         data[key].payments[childId] = [];
     }
 
-    const paymentColor = document.getElementById('newPaymentColor').value;
+    const paymentColor = newPaymentColor ? newPaymentColor.value : '#2ecc71';
     data[key].payments[childId].push({
         amount: amount,
         date: dateStr,
@@ -958,7 +1110,7 @@ const addPayment = () => {
     });
 
     saveData(data);
-    document.getElementById('newPaymentAmount').value = '';
+    newPaymentAmount.value = '';
     renderPaymentList();
     renderChildrenReports();
     renderCalendar();
@@ -1065,32 +1217,13 @@ const shareApp = () => {
 };
 
 const showDonationModal = () => {
-    const modal = document.createElement('div');
-    modal.id = 'donationModal';
-    modal.className = 'modal';
-    modal.innerHTML = `
-    <div class="modal-content">
-    <span class="modal-close" onclick="closeModal('donationModal')">&times;</span>
-    <h3>💝 Sprijină acest proiect</h3>
-    <p>Dacă această aplicație ți-a fost utilă, poți să o sprijini pentru dezvoltarea și îmbunătățirea continuă.</p>
-    <div class="donation-buttons">
-    <button class="donation-btn buymeacoffee" onclick="openDonationLink('buymeacoffee')">💳 buymeacoffee</button>
-    <button class="donation-btn IBAM" onclick="openDonationLink('IBAM')">📱 IBAM</button>
-    </div>
-    <p class="donation-thanks">Mulțumim pentru sprijin! 🙏</p>
-    </div>
-    `;
-
-    if (!document.getElementById('donationModal')) {
-        document.body.appendChild(modal);
-    }
     openModal('donationModal');
 };
 
 const openDonationLink = (platform) => {
     const links = {
         'buymeacoffee': 'https://buymeacoffee.com/aswy',
-        'IBAM': 'https://aswy13.github.io/gradinita/iban.html', '_blank'
+        'IBAM': 'https://RO31INGB0000999901856836'
     };
 
     window.open(links[platform], '_blank');
@@ -1129,27 +1262,20 @@ const showBackupManager = () => {
         backupHTML += '</div>';
     }
 
-    const modal = document.getElementById('backupManagerModal') || createBackupModal();
-    modal.querySelector('.modal-content').innerHTML = `
-    <span class="modal-close" onclick="closeModal('backupManagerModal')">&times;</span>
-    ${backupHTML}
-    <div style="display: flex; gap: 10px; margin-top: 15px;">
-    <button onclick="closeModal('backupManagerModal')" style="flex: 1; padding: 10px; background: #95a5a6; color: white; border: none; border-radius: 6px; cursor: pointer;">
-    Închide
-    </button>
-    </div>
-    `;
+    const modal = document.getElementById('backupManagerModal');
+    if (modal) {
+        modal.querySelector('.modal-content').innerHTML = `
+        <span class="modal-close" onclick="closeModal('backupManagerModal')">&times;</span>
+        ${backupHTML}
+        <div style="display: flex; gap: 10px; margin-top: 15px;">
+        <button onclick="closeModal('backupManagerModal')" style="flex: 1; padding: 10px; background: #95a5a6; color: white; border: none; border-radius: 6px; cursor: pointer;">
+        Închide
+        </button>
+        </div>
+        `;
+    }
 
     openModal('backupManagerModal');
-};
-
-const createBackupModal = () => {
-    const modal = document.createElement('div');
-    modal.id = 'backupManagerModal';
-    modal.className = 'modal';
-    modal.innerHTML = `<div class="modal-content" style="max-width: 450px;"></div>`;
-    document.body.appendChild(modal);
-    return modal;
 };
 
 const restoreBackup = (timestamp) => {
@@ -1225,114 +1351,124 @@ const importJSON = (event) => {
 };
 
 const exportExcel = () => {
-    const data = loadData();
-    const rows = [];
+    try {
+        const data = loadData();
+        const rows = [];
 
-    for(const key of Object.keys(data)) {
-        if(key === 'children') continue;
-        const [y, m] = key.split('-').map(v => parseInt(v));
-        const monthName = new Date(y, m).toLocaleString('ro-RO', { month: 'long' });
+        for(const key of Object.keys(data)) {
+            if(key === 'children') continue;
+            const [y, m] = key.split('-').map(v => parseInt(v));
+            const monthName = new Date(y, m).toLocaleString('ro-RO', { month: 'long' });
 
-        for(const childId of Object.keys(data.children || {})) {
-            const monthData = data[key];
-            const childData = data.children[childId];
-            const kindergartenRate = monthData.rates?.[childId] ?? childData.defaultRate;
-            const kindergartenDays = (monthData.days?.[childId] || []).length;
-            const totalKindergarten = kindergartenDays * kindergartenRate;
+            for(const childId of Object.keys(data.children || {})) {
+                const monthData = data[key];
+                const childData = data.children[childId];
+                const kindergartenRate = monthData.rates?.[childId] ?? childData.defaultRate;
+                const kindergartenDays = (monthData.days?.[childId] || []).length;
+                const totalKindergarten = kindergartenDays * kindergartenRate;
 
-            let totalExtra = 0;
-            const activities = childData.extraActivities || [];
-            activities.forEach((activity, index) => {
-                if (activity.enabled) {
-                    const activityDays = (monthData.daysExtra && monthData.daysExtra[childId] && monthData.daysExtra[childId][index]) ?
-                    monthData.daysExtra[childId][index].length : 0;
-                    totalExtra += activityDays * activity.rate;
-                }
-            });
+                let totalExtra = 0;
+                const activities = childData.extraActivities || [];
+                activities.forEach((activity, index) => {
+                    if (activity.enabled) {
+                        const activityDays = (monthData.daysExtra && monthData.daysExtra[childId] && monthData.daysExtra[childId][index]) ?
+                        monthData.daysExtra[childId][index].length : 0;
+                        totalExtra += activityDays * activity.rate;
+                    }
+                });
 
-            const totalPaidKindergarten = (monthData.payments?.[childId] || []).filter(p => p.type === 'kindergarten').reduce((sum, p) => sum + parseFloat(p.amount), 0);
-            const totalPaidExtra = (monthData.payments?.[childId] || []).filter(p => p.type === 'extra').reduce((sum, p) => sum + parseFloat(p.amount), 0);
-            const previousMonthBalance = getHistoricalBalance(y, m, childId, data);
-            const finalBalance = ((totalPaidKindergarten + totalPaidExtra) + previousMonthBalance) - (totalKindergarten + totalExtra);
+                const totalPaidKindergarten = (monthData.payments?.[childId] || []).filter(p => p.type === 'kindergarten').reduce((sum, p) => sum + parseFloat(p.amount), 0);
+                const totalPaidExtra = (monthData.payments?.[childId] || []).filter(p => p.type === 'extra').reduce((sum, p) => sum + parseFloat(p.amount), 0);
+                const previousMonthBalance = getHistoricalBalance(y, m, childId, data);
+                const finalBalance = ((totalPaidKindergarten + totalPaidExtra) + previousMonthBalance) - (totalKindergarten + totalExtra);
 
-            rows.push({
-                An: y,
-                Luna: monthName,
-                Copil: childData.name,
-                Instituție: childData.institution || 'Grădiniță',
-                "Zile Grădiniță": kindergartenDays,
-                "Total Grădiniță (lei)": totalKindergarten.toFixed(2),
-                      "Plătit Grădiniță (lei)": totalPaidKindergarten.toFixed(2),
-                      "Total Activități (lei)": totalExtra.toFixed(2),
-                      "Plătit Activități (lei)": totalPaidExtra.toFixed(2),
-                      "Sold Reportat Cumulativ (lei)": previousMonthBalance.toFixed(2),
-                      "Balanță Finală Cumulativă (lei)": finalBalance.toFixed(2)
-            });
+                rows.push({
+                    An: y,
+                    Luna: monthName,
+                    Copil: childData.name,
+                    Instituție: childData.institution || 'Grădiniță',
+                    "Zile Grădiniță": kindergartenDays,
+                    "Total Grădiniță (lei)": totalKindergarten.toFixed(2),
+                          "Plătit Grădiniță (lei)": totalPaidKindergarten.toFixed(2),
+                          "Total Activități (lei)": totalExtra.toFixed(2),
+                          "Plătit Activități (lei)": totalPaidExtra.toFixed(2),
+                          "Sold Reportat Cumulativ (lei)": previousMonthBalance.toFixed(2),
+                          "Balanță Finală Cumulativă (lei)": finalBalance.toFixed(2)
+                });
+            }
         }
-    }
 
-    const ws = XLSX.utils.json_to_sheet(rows);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Prezențe');
-    XLSX.writeFile(wb, 'gradinita_export.xlsx');
-    NotificationManager.show('Export Excel realizat!', 'success');
+        const ws = XLSX.utils.json_to_sheet(rows);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Prezențe');
+        XLSX.writeFile(wb, 'gradinita_export.xlsx');
+        NotificationManager.show('Export Excel realizat!', 'success');
+    } catch (error) {
+        console.error('Eroare export Excel:', error);
+        NotificationManager.show('Eroare la exportul Excel!', 'error');
+    }
 };
 
 const exportPDF = () => {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('l', 'pt', 'a4');
-    const head = [
-        ['An', 'Lună', 'Copil', 'Instituție', 'Cost Grăd.', 'Plătit Grăd.', 'Cost Act.', 'Plătit Act.', 'Sold Reportat', 'Balanță Finală']
-    ];
-    const rows = [];
-    const data = loadData();
+    try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('l', 'pt', 'a4');
+        const head = [
+            ['An', 'Lună', 'Copil', 'Instituție', 'Cost Grăd.', 'Plătit Grăd.', 'Cost Act.', 'Plătit Act.', 'Sold Reportat', 'Balanță Finală']
+        ];
+        const rows = [];
+        const data = loadData();
 
-    for (const key of Object.keys(data)) {
-        if (key === 'children') continue;
-        const [y, m] = key.split('-').map(v => parseInt(v));
-        const monthName = new Date(y, m).toLocaleString('ro-RO', { month: 'long' });
+        for (const key of Object.keys(data)) {
+            if (key === 'children') continue;
+            const [y, m] = key.split('-').map(v => parseInt(v));
+            const monthName = new Date(y, m).toLocaleString('ro-RO', { month: 'long' });
 
-        for (const childId of Object.keys(data.children || {})) {
-            const childData = data.children[childId];
-            const monthData = data[key];
-            const rateKindergarten = monthData.rates?.[childId] ?? (childData.defaultRate || 0);
-            const kindergartenDays = (monthData.days?.[childId] || []).length;
-            const totalKindergarten = kindergartenDays * rateKindergarten;
+            for (const childId of Object.keys(data.children || {})) {
+                const childData = data.children[childId];
+                const monthData = data[key];
+                const rateKindergarten = monthData.rates?.[childId] ?? (childData.defaultRate || 0);
+                const kindergartenDays = (monthData.days?.[childId] || []).length;
+                const totalKindergarten = kindergartenDays * rateKindergarten;
 
-            let totalExtra = 0;
-            const activities = childData.extraActivities || [];
-            activities.forEach((activity, index) => {
-                if (activity.enabled) {
-                    const activityDays = (monthData.daysExtra && monthData.daysExtra[childId] && monthData.daysExtra[childId][index]) ?
-                    monthData.daysExtra[childId][index].length : 0;
-                    totalExtra += activityDays * activity.rate;
-                }
-            });
+                let totalExtra = 0;
+                const activities = childData.extraActivities || [];
+                activities.forEach((activity, index) => {
+                    if (activity.enabled) {
+                        const activityDays = (monthData.daysExtra && monthData.daysExtra[childId] && monthData.daysExtra[childId][index]) ?
+                        monthData.daysExtra[childId][index].length : 0;
+                        totalExtra += activityDays * activity.rate;
+                    }
+                });
 
-            const totalPaidKindergarten = (monthData.payments?.[childId] || []).filter(p => p.type === 'kindergarten').reduce((sum, p) => sum + parseFloat(p.amount), 0);
-            const totalPaidExtra = (monthData.payments?.[childId] || []).filter(p => p.type === 'extra').reduce((sum, p) => sum + parseFloat(p.amount), 0);
-            const previousMonthBalance = getHistoricalBalance(y, m, childId, data);
-            const finalBalance = ((totalPaidKindergarten+totalPaidExtra) + previousMonthBalance) - (totalKindergarten + totalExtra);
+                const totalPaidKindergarten = (monthData.payments?.[childId] || []).filter(p => p.type === 'kindergarten').reduce((sum, p) => sum + parseFloat(p.amount), 0);
+                const totalPaidExtra = (monthData.payments?.[childId] || []).filter(p => p.type === 'extra').reduce((sum, p) => sum + parseFloat(p.amount), 0);
+                const previousMonthBalance = getHistoricalBalance(y, m, childId, data);
+                const finalBalance = ((totalPaidKindergarten+totalPaidExtra) + previousMonthBalance) - (totalKindergarten + totalExtra);
 
-            rows.push([
-                y, monthName, childData.name, childData.institution || 'Grădiniță',
-                totalKindergarten.toFixed(2), totalPaidKindergarten.toFixed(2),
-                      totalExtra.toFixed(2), totalPaidExtra.toFixed(2),
-                      previousMonthBalance.toFixed(2), finalBalance.toFixed(2)
-            ]);
+                rows.push([
+                    y, monthName, childData.name, childData.institution || 'Grădiniță',
+                    totalKindergarten.toFixed(2), totalPaidKindergarten.toFixed(2),
+                          totalExtra.toFixed(2), totalPaidExtra.toFixed(2),
+                          previousMonthBalance.toFixed(2), finalBalance.toFixed(2)
+                ]);
+            }
         }
-    }
 
-    doc.autoTable({
-        head: head,
-        body: rows,
-        startY: 40,
-        styles: { fontSize: 7 },
-        headStyles: { fillColor: [52, 152, 219], textColor: 255 },
-        theme: 'grid'
-    });
-    doc.save('gradinita_export.pdf');
-    NotificationManager.show('Export PDF realizat!', 'success');
+        doc.autoTable({
+            head: head,
+            body: rows,
+            startY: 40,
+            styles: { fontSize: 7 },
+            headStyles: { fillColor: [52, 152, 219], textColor: 255 },
+            theme: 'grid'
+        });
+        doc.save('gradinita_export.pdf');
+        NotificationManager.show('Export PDF realizat!', 'success');
+    } catch (error) {
+        console.error('Eroare export PDF:', error);
+        NotificationManager.show('Eroare la exportul PDF!', 'error');
+    }
 };
 
 /* ================== FUNCȚII UTILITARE ================== */
@@ -1350,15 +1486,24 @@ const changeMonth = (offset) => {
     if (month < 0) { month = 11; year -= 1; }
     if (month > 11) { month = 0; year += 1; }
     today = new Date(year, month, 1);
-    document.getElementById('yearSelectNav').value = year;
-    document.getElementById('monthSelectNav').value = month;
+
+    const yearSelect = document.getElementById('yearSelectNav');
+    const monthSelect = document.getElementById('monthSelectNav');
+    if (yearSelect) yearSelect.value = year;
+    if (monthSelect) monthSelect.value = month;
+
     renderCalendar();
 };
 
 const changeMonthToSelected = () => {
-    month = parseInt(document.getElementById('monthSelectNav').value);
-    year = parseInt(document.getElementById('yearSelectNav').value);
-    renderCalendar();
+    const monthSelect = document.getElementById('monthSelectNav');
+    const yearSelect = document.getElementById('yearSelectNav');
+
+    if (monthSelect && yearSelect) {
+        month = parseInt(monthSelect.value);
+        year = parseInt(yearSelect.value);
+        renderCalendar();
+    }
 };
 
 const renderLegend = () => {
@@ -1393,10 +1538,6 @@ const renderLegend = () => {
     itemPayment.className = 'legend-item';
     itemPayment.innerHTML = `<div class="color-box" style="background:#2ecc71"></div><div>Indicator Plată</div>`;
     legend.appendChild(itemPayment);
-};
-
-const renderChart = () => {
-    // Funcție temporar dezactivată
 };
 
 /* ================== RAPORT GENERAL ================== */
@@ -1518,13 +1659,17 @@ if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/service-worker.js')
         .then(registration => {
             console.log('ServiceWorker registered successfully');
-            document.getElementById('update-message').style.display = 'none';
+            const updateMessage = document.getElementById('update-message');
+            if (updateMessage) updateMessage.style.display = 'none';
 
-            document.getElementById('reload-button').addEventListener('click', () => {
-                if (registration.waiting) {
-                    registration.waiting.postMessage({ action: 'skipWaiting' });
-                }
-            });
+            const reloadButton = document.getElementById('reload-button');
+            if (reloadButton) {
+                reloadButton.addEventListener('click', () => {
+                    if (registration.waiting) {
+                        registration.waiting.postMessage({ action: 'skipWaiting' });
+                    }
+                });
+            }
 
             registration.addEventListener('updatefound', () => {
                 const newWorker = registration.installing;
@@ -1532,26 +1677,30 @@ if ('serviceWorker' in navigator) {
                 newWorker.addEventListener('statechange', () => {
                     if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
                         console.log('New content is available; please refresh.');
-                        document.getElementById('update-message').style.display = 'block';
+                        const updateMessage = document.getElementById('update-message');
+                        if (updateMessage) updateMessage.style.display = 'block';
                     }
                 });
             });
         })
         .catch(error => {
             console.log('ServiceWorker registration failed: ', error);
-            document.getElementById('update-message').style.display = 'none';
+            const updateMessage = document.getElementById('update-message');
+            if (updateMessage) updateMessage.style.display = 'none';
         });
 
-        navigator.serviceWorker.addEventListener('controllerchange', () => {
-            if (!refreshing) {
-                refreshing = true;
-                document.getElementById('update-message').style.display = 'none';
-                window.location.reload();
-            }
-        });
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (!refreshing) {
+                    refreshing = true;
+                    const updateMessage = document.getElementById('update-message');
+                    if (updateMessage) updateMessage.style.display = 'none';
+                    window.location.reload();
+                }
+            });
     });
 } else {
-    document.getElementById('update-message').style.display = 'none';
+    const updateMessage = document.getElementById('update-message');
+    if (updateMessage) updateMessage.style.display = 'none';
 }
 
 /* ================== AUTO BACKUP ================== */
@@ -1576,99 +1725,43 @@ const setupAutoBackup = () => {
     }, 30 * 60 * 1000);
 };
 
-/* ================== FUNCȚII PENTRU ZILE FĂRĂ PLATĂ ================== */
-const applyMultiFreeDay = () => {
-    const data = loadData();
-    const key = `${year}-${month}`;
-    if (!data[key].freeDays) data[key].freeDays = {};
-
-    const isTogglingOn = !selectedDays.every(d => data[key].freeDays && data[key].freeDays[d]);
-
-    selectedDays.forEach(d => {
-        if (isTogglingOn) {
-            const allChildIds = Object.keys(data.children || {});
-            data[key].freeDays[d] = allChildIds;
-
-            for(const childId in data.children){
-                if (data[key].days[childId]) {
-                    data[key].days[childId] = data[key].days[childId].filter(day => day !== d);
-                }
-                if (data[key].daysExtra[childId]) {
-                    data[key].daysExtra[childId] = data[key].daysExtra[childId].map(activityDays =>
-                    activityDays.filter(day => day !== d)
-                    );
-                }
-            }
-
-            if (data[key].holidays && data[key].holidays.includes(d)) {
-                data[key].holidays = data[key].holidays.filter(h => h !== d);
-            }
-        } else {
-            delete data[key].freeDays[d];
-        }
-    });
-
-    saveData(data);
-    renderCalendar();
-    reRenderModalButtons();
-    NotificationManager.show(isTogglingOn ? 'Zile marcate ca fără plată!' : 'Zilele nu mai sunt fără plată!', 'success');
-};
-
-const toggleFreeDayForChild = (childId) => {
-    const data = loadData();
-    const key = `${year}-${month}`;
-    if (!data[key].freeDays) data[key].freeDays = {};
-
-    const isTogglingOn = !selectedDays.every(d =>
-    data[key].freeDays && data[key].freeDays[d] && data[key].freeDays[d].includes(childId)
-    );
-
-    selectedDays.forEach(d => {
-        if (!data[key].freeDays[d]) data[key].freeDays[d] = [];
-
-        if (isTogglingOn) {
-            if (!data[key].freeDays[d].includes(childId)) {
-                data[key].freeDays[d].push(childId);
-            }
-
-            if (data[key].days[childId]) {
-                data[key].days[childId] = data[key].days[childId].filter(day => day !== d);
-            }
-            if (data[key].daysExtra[childId]) {
-                data[key].daysExtra[childId] = data[key].daysExtra[childId].map(activityDays =>
-                activityDays.filter(day => day !== d)
-                );
-            }
-        } else {
-            data[key].freeDays[d] = data[key].freeDays[d].filter(id => id !== childId);
-            if (data[key].freeDays[d].length === 0) {
-                delete data[key].freeDays[d];
-            }
-        }
-    });
-
-    saveData(data);
-    renderCalendar();
-    reRenderModalButtons();
-    NotificationManager.show(isTogglingOn ? 'Zile marcate ca fără plată pentru copil!' : 'Zilele nu mai sunt fără plată pentru copil!', 'success');
-};
-
 /* ================== INIȚIALIZARE ================== */
 (function init() {
+    console.log('Aplicația se încarcă...');
+
     const data = loadData();
     if (!data.children || Object.keys(data.children).length === 0) {
         data.children = {};
         const id1 = 'c1';
         const id2 = 'c2';
-
-
+        data.children[id1] = {
+            name: 'Casian',
+            institution: 'Grădiniță',
+            startDate: new Date().toISOString().split('T')[0],
+ defaultRate: 15,
+     color: '#4da6ff',
+     extraActivities: [
+         { name: 'Engleză', rate: 20, color: '#9b59b6', enabled: true }
+     ]
+        };
+        data.children[id2] = {
+            name: 'Ezra',
+            institution: 'Grădiniță',
+            startDate: new Date().toISOString().split('T')[0],
+ defaultRate: 15,
+     color: '#ffd633',
+     extraActivities: [
+         { name: 'Engleză', rate: 20, color: '#ff6f61', enabled: true }
+     ]
+        };
         saveData(data);
     }
 
+    // Actualizează controalele de navigare
     const yearSelect = document.getElementById('yearSelectNav');
     const monthSelect = document.getElementById('monthSelectNav');
-    if (yearSelect) yearSelect.value = new Date().getFullYear();
-    if (monthSelect) monthSelect.value = new Date().getMonth();
+    if (yearSelect) yearSelect.value = year;
+    if (monthSelect) monthSelect.value = month;
 
     setupAutoBackup();
     renderCalendar();
