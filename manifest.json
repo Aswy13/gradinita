@@ -1,11 +1,11 @@
 {
   "name": "Gradinita & Cresa",
   "short_name": "Grădiniță",
-  "start_url": "/gradinita/",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#f0f4f7",
   "theme_color": "#3498db",
-  "description": "Aplicație pentru gestionarea prezenței și plăților copiilor la grădiniță si crese.",
+  "description": "Aplicație pentru gestionarea prezenței și plăților copiilor la grădiniță si creșă.",
   "icons": [
     {
       "src": "icon-192.png",

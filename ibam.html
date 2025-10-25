@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Donație Grădiniță</title>
+<link rel="stylesheet" href="style.css">
+<style>
+body {
+  text-align: center;
+  background: #f8f9fa;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  margin-top: 60px;
+  color: #2c3e50;
+}
+.container {
+  background: white;
+  display: inline-block;
+  padding: 30px 40px;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+h2 {
+  color: #3498db;
+  margin-bottom: 15px;
+}
+.iban-box {
+  border: 2px dashed #0070ba;
+  border-radius: 10px;
+  padding: 20px;
+  font-size: 18px;
+  background: #f9fcff;
+  margin: 20px auto;
+  width: fit-content;
+  max-width: 90%;
+  word-break: break-all;
+}
+.copy-btn {
+  background: #0070ba;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+.copy-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+p {
+  margin-top: 15px;
+  color: #555;
+}
+.footer {
+  margin-top: 30px;
+  font-size: 14px;
+  color: #888;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h2>💝 Susține proiectul <br>„Grădiniță & Creșă”</h2>
+  <p>Dacă aplicația ți-a fost utilă, poți contribui la dezvoltarea ei printr-o donație:</p>
+
+  <div class="iban-box">
+    <strong>Cont IBAN:</strong><br>
+    <span id="ibanText">RO31INGB0000999901856836</span><br><br>
+    <em>Banca ING Bank — Titular: Andrei Dan</em><br><br>
+    <button class="copy-btn" onclick="copyIban()">📋 Copiază IBAN</button>
+  </div>
+
+  <p>Îți mulțumim pentru sprijin și încredere! 🙏</p>
+  <button class="copy-btn" onclick="window.location.href='index.html'">⬅ Înapoi la aplicație</button>
+
+  <div class="footer">POWERED BY ASWY | v3.0</div>
+</div>
+
+<script>
+function copyIban() {
+  const iban = document.getElementById('ibanText').innerText;
+  navigator.clipboard.writeText(iban);
+  alert('IBAN copiat: ' + iban);
+}
+</script>
+
+</body>
+</html>

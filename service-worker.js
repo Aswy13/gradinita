@@ -1,65 +1,48 @@
-const CACHE_NAME = 'gradinita-cache-v1.1'; // Schimbă numărul la fiecare actualizare majoră
+const CACHE_NAME = 'gradinita-cache-v2.3';
 const urlsToCache = [
-  'gradinita.html',
-  'manifest.json',
-  // Adaugă și numele icon-urilor tale aici
-  'icon-192.png',
-  'icon-512.png',
-  // Biblioteci externe
-  'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js',
-  'https://cdn.jsdelivr.net/npm/chart.js'
+  '/',
+'gradinita.html',
+'index.html',
+'manifest.json',
+'style.css',
+'app.js',
+'icon-192.png',
+'icon-512.png',
+// Biblioteci externe
+'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',
+'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
+'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js',
+'https://cdn.jsdelivr.net/npm/chart.js'
 ];
-// AICI ÎNCEPE LOCUL DE INSERARE:
-// ================== PWA Service Worker Registration & Update Handler ==================
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/service-worker.js')
-            .then(registration => {
-                console.log('ServiceWorker registration successful with scope: ', registration.scope);
 
-                // Ascultă evenimentul de actualizare (updatefound)
-                registration.addEventListener('updatefound', () => {
-                    const installingWorker = registration.installing;
-                    installingWorker.addEventListener('statechange', () => {
-                        // Când noul Service Worker a terminat de instalat
-                        if (installingWorker.state === 'installed') {
-                            if (navigator.serviceWorker.controller) {
-                                // Afișează mesajul de actualizare
-                                document.getElementById('update-message').style.display = 'block';
-                            } else {
-                                // Primul conținut a fost pus în cache
-                                console.log('Content is cached for offline use.');
-                            }
-                        }
-                    });
-                });
-            })
-            .catch(error => {
-                console.log('ServiceWorker registration failed: ', error);
-            });
-    });
-}
-// AICI SE TERMINĂ LOCUL DE INSERARE
+// Install: Adaugă fișierele în cache
+self.addEventListener('install', event => {
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+    .then(cache => {
+      console.log('Opened cache');
+      return cache.addAll(urlsToCache);
+    })
+  );
+});
 
 // Fetch: Servirea conținutului din cache
 self.addEventListener('fetch', event => {
   event.respondWith(
     caches.match(event.request)
-      .then(response => {
-        // Cache hit - return response
-        if (response) {
-          return response;
-        }
-        // Nu este în cache, face o cerere la rețea
-        return fetch(event.request);
+    .then(response => {
+      // Cache hit - return response
+      if (response) {
+        return response;
       }
+      // Nu este în cache, face o cerere la rețea
+      return fetch(event.request);
+    }
     )
   );
 });
 
-// Activare: Curățarea vechilor cache-uri (dacă schimbi CACHE_NAME)
+// Activare: Curățarea vechilor cache-uri
 self.addEventListener('activate', event => {
   const cacheWhitelist = [CACHE_NAME];
   event.waitUntil(
@@ -73,4 +56,11 @@ self.addEventListener('activate', event => {
       );
     })
   );
+});
+
+// Listener pentru a prelua controlul imediat la cerere
+self.addEventListener('message', event => {
+  if (event.data.action === 'skipWaiting') {
+    self.skipWaiting();
+  }
 });
