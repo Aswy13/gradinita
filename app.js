@@ -1223,7 +1223,7 @@ const showDonationModal = () => {
 const openDonationLink = (platform) => {
     const links = {
         'buymeacoffee': 'https://buymeacoffee.com/aswy',
-        'IBAM': 'https://RO31INGB0000999901856836'
+        'IBAM': 'https://aswy13.github.io/gradinita/iban.html', '_blank'
     };
 
     window.open(links[platform], '_blank');
