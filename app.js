@@ -1223,7 +1223,7 @@ const showDonationModal = () => {
 const openDonationLink = (platform) => {
     const links = {
         'buymeacoffee': 'https://buymeacoffee.com/aswy',
-        'IBAM': 'https://RO31INGB0000999901856836'
+        'IBAM': 'https://aswy13.github.io/gradinita/iban.html'
     };
 
     window.open(links[platform], '_blank');
@@ -1735,25 +1735,16 @@ const setupAutoBackup = () => {
         const id1 = 'c1';
         const id2 = 'c2';
         data.children[id1] = {
-            name: 'Casian',
+            name: 'Copil1',
             institution: 'Grădiniță',
             startDate: new Date().toISOString().split('T')[0],
- defaultRate: 15,
+ defaultRate: 0,
      color: '#4da6ff',
      extraActivities: [
-         { name: 'Engleză', rate: 20, color: '#9b59b6', enabled: true }
+         { name: 'Engleză', rate: 0, color: '#9b59b6', enabled: true }
      ]
         };
-        data.children[id2] = {
-            name: 'Ezra',
-            institution: 'Grădiniță',
-            startDate: new Date().toISOString().split('T')[0],
- defaultRate: 15,
-     color: '#ffd633',
-     extraActivities: [
-         { name: 'Engleză', rate: 20, color: '#ff6f61', enabled: true }
-     ]
-        };
+       
         saveData(data);
     }
 
