@@ -1369,10 +1369,9 @@ const showDonationModal = () => {
 
 const openDonationLink = (type) => {
     if (type === 'buymeacoffee') {
-        window.open('https://www.buymeacoffee.com/aswy', '_blank');
-    } else if (type === 'IBAM' || type === 'IBAN') {
-        // ÎNLOCUIEȘTE link-ul de mai jos cu adresa reală a fișierului tău de pe GitHub
-        // Exemplu: https://raw.githubusercontent.com/NUME_UTILIZATOR/NUME_PROIECT/main/iban.txt
+        window.open('https://www.buymeacoffee.com/aswy13', '_blank');
+    } else if (type === 'IBAN') {
+        // Pune aici link-ul tău direct către fișierul de pe github
         window.open('https://github.com/Aswy13/gradinita/blob/main/ibam.html', '_blank');
     }
 };
