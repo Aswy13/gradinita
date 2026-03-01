@@ -855,3 +855,7 @@ display: none !important;
     padding: 15px;
   }
 }
+.day.multi-selected {
+  outline: 3px solid #3498db !important;
+  background-color: rgba(52, 152, 219, 0.1) !important;
+}

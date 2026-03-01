@@ -427,21 +427,28 @@ const clearMultiSelection = () => {
 };
 
 const toggleCtrlSelection = (day, elCell, event) => {
-    // Pentru desktop - folosim Ctrl ca înainte
     const isCtrlKey = event.ctrlKey || event.metaKey;
 
     if (isCtrlKey) {
+        // Dacă ținem CTRL, adăugăm sau scoatem ziua din listă
         const index = selectedDays.indexOf(day);
         if (index > -1) {
             selectedDays.splice(index, 1);
             elCell.style.outline = '';
+            elCell.classList.remove('multi-selected');
         } else {
             selectedDays.push(day);
             elCell.style.outline = '3px solid #3498db';
+            elCell.classList.add('multi-selected');
         }
     } else {
-        // Pentru click normal - resetăm și afișăm modalul pentru o singură zi
-        if (!isLongPressMode) {
+        // Dacă dăm click fără CTRL:
+        // 1. Dacă ziua pe care am dat click este DEJA în lista de selecție multiplă,
+        //    înseamnă că vrem să deschidem modalul pentru toate acele zile.
+        if (selectedDays.length > 1 && selectedDays.includes(day)) {
+            showDayModal(day, elCell);
+        } else {
+            // 2. Dacă nu era selectată, resetăm tot și deschidem doar pentru ziua asta
             clearMultiSelection();
             selectedDays = [day];
             showDayModal(day, elCell);
@@ -627,19 +634,23 @@ const applyMultiPresence = (childId, type, activityIndex = null) => {
     const data = loadData();
     const key = `${year}-${month}`;
 
+    // Verificăm dacă avem zile selectate. Dacă nu, nu facem nimic.
+    if (!selectedDays || selectedDays.length === 0) return;
+
     if (type === 'kindergarten') {
         if (!data[key].days) data[key].days = {};
         if (!data[key].days[childId]) data[key].days[childId] = [];
 
-        const isTogglingOn = !selectedDays.every(d => data[key].days[childId].includes(d));
+        // Verificăm dacă în toate zilele selectate copilul este deja bifat
+        const isAlreadyAllChecked = selectedDays.every(d => data[key].days[childId].includes(d));
 
         selectedDays.forEach(d => {
             const arr = data[key].days[childId];
             const idx = arr.indexOf(d);
-            if (isTogglingOn) {
-                if (idx === -1) arr.push(d);
+            if (!isAlreadyAllChecked) {
+                if (idx === -1) arr.push(d); // Adăugăm dacă nu e deja
             } else {
-                if (idx > -1) arr.splice(idx, 1);
+                if (idx > -1) arr.splice(idx, 1); // Scoatem dacă era deja bifat peste tot
             }
         });
     } else if (type === 'extra' && activityIndex !== null) {
@@ -651,11 +662,11 @@ const applyMultiPresence = (childId, type, activityIndex = null) => {
         }
 
         const activityDays = data[key].daysExtra[childId][activityIndex];
-        const isTogglingOn = !selectedDays.every(d => activityDays.includes(d));
+        const isAlreadyAllChecked = selectedDays.every(d => activityDays.includes(d));
 
         selectedDays.forEach(d => {
             const idx = activityDays.indexOf(d);
-            if (isTogglingOn) {
+            if (!isAlreadyAllChecked) {
                 if (idx === -1) activityDays.push(d);
             } else {
                 if (idx > -1) activityDays.splice(idx, 1);
@@ -1356,15 +1367,14 @@ const showDonationModal = () => {
     openModal('donationModal');
 };
 
-const openDonationLink = (platform) => {
-    const links = {
-        'buymeacoffee': 'https://buymeacoffee.com/aswy',
-        'IBAM': 'https://RO31INGB0000999901856836'
-    };
-
-    window.open(links[platform], '_blank');
-    NotificationManager.show('Mulțumim pentru sprijin! ❤️', 'success');
-    closeModal('donationModal');
+const openDonationLink = (type) => {
+    if (type === 'buymeacoffee') {
+        window.open('https://www.buymeacoffee.com/aswy', '_blank');
+    } else if (type === 'IBAM' || type === 'IBAN') {
+        // ÎNLOCUIEȘTE link-ul de mai jos cu adresa reală a fișierului tău de pe GitHub
+        // Exemplu: https://raw.githubusercontent.com/NUME_UTILIZATOR/NUME_PROIECT/main/iban.txt
+        window.open('https://github.com/Aswy13/gradinita/blob/main/ibam.html', '_blank');
+    }
 };
 
 /* ================== BACKUP MANAGER ================== */
