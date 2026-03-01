@@ -1363,16 +1363,14 @@ const shareApp = () => {
     }
 };
 
-const showDonationModal = () => {
-    openModal('donationModal');
-};
-
 const openDonationLink = (type) => {
     if (type === 'buymeacoffee') {
         window.open('https://www.buymeacoffee.com/aswy13', '_blank');
-    } else if (type === 'IBAN') {
-        // Pune aici link-ul tău direct către fișierul de pe github
-        window.open('https://github.com/Aswy13/gradinita/blob/main/ibam.html', '_blank');
+    } else if (type === 'IBAM' || type === 'IBAN') {
+        // Aici pui link-ul tău direct către fișierul de pe github
+        // Trebuie să fie link-ul "Raw" ca să se vadă textul curat
+        const githubIbanUrl = 'https://raw.githubusercontent.com/Aswy13/gradinita/refs/heads/main/ibam.html';
+        window.open(githubIbanUrl, '_blank');
     }
 };
 
