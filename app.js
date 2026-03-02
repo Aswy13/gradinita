@@ -8,6 +8,9 @@ let today = new Date();
 let month = today.getMonth();
 let year = today.getFullYear();
 let selectedDays = [];
+let isMouseSelecting = false;
+let mouseSelectedDays = [];
+let lastHoveredCell = null;
 let chartInstance = null;
 let selectedChildIdForModal = null;
 
@@ -74,6 +77,45 @@ const resetMultiSelection = () => {
         cell.style.outline = '';
         cell.classList.remove('multi-selected');
     });
+};
+/* ================== MOUSE DRAG SELECT (DESKTOP) ================== */
+
+const startMouseSelection = (day, cell) => {
+    isMouseSelecting = true;
+    mouseSelectedDays = [day];
+
+    cell.style.outline = '3px solid #3498db';
+    cell.classList.add('multi-selected');
+};
+
+const moveMouseSelection = (cell) => {
+    if (!isMouseSelecting) return;
+    if (!cell || cell === lastHoveredCell) return;
+
+    lastHoveredCell = cell;
+
+    const day = parseInt(cell.dataset.day);
+    if (!day) return;
+
+    if (!mouseSelectedDays.includes(day)) {
+        mouseSelectedDays.push(day);
+        cell.style.outline = '3px solid #3498db';
+        cell.classList.add('multi-selected');
+    }
+};
+
+const endMouseSelection = (day, cell) => {
+    if (!isMouseSelecting) return;
+
+    isMouseSelecting = false;
+    selectedDays = [...mouseSelectedDays];
+
+    if (selectedDays.length > 0) {
+        showDayModal(day, cell);
+    }
+
+    mouseSelectedDays = [];
+    lastHoveredCell = null;
 };
 
 /* ================== NOTIFICĂRI ================== */
@@ -263,6 +305,29 @@ const renderCalendar = () => {
                 toggleCtrlSelection(d, day, e);
             }
         });
+        // ================= MOUSE DRAG =================
+
+        // mousedown
+        day.addEventListener('mousedown', (e) => {
+            // doar click stanga
+            if (e.button !== 0) return;
+
+            // daca tine Ctrl, lasam vechiul comportament
+            if (e.ctrlKey || e.metaKey) return;
+
+            clearMultiSelection();
+            startMouseSelection(d, day);
+        });
+
+        // mouseover (drag)
+        day.addEventListener('mouseenter', () => {
+            moveMouseSelection(day);
+        });
+
+        // mouse up pe fiecare celula
+        day.addEventListener('mouseup', () => {
+            endMouseSelection(d, day);
+        });
 
         // Adaugă eveniment pentru dublu-tap pentru a finaliza selecția multiplă
         day.addEventListener('dblclick', (e) => {
@@ -294,6 +359,19 @@ const renderCalendar = () => {
     renderChildrenReports();
     renderLegend();
 };
+document.addEventListener('mouseup', () => {
+    if (isMouseSelecting) {
+        isMouseSelecting = false;
+
+        if (mouseSelectedDays.length > 0) {
+            selectedDays = [...mouseSelectedDays];
+            showDayModal(selectedDays[0], document.querySelector(`.day[data-day='${selectedDays[0]}']`));
+        }
+
+        mouseSelectedDays = [];
+        lastHoveredCell = null;
+    }
+});
 
 const updateDayDisplay = (cell, day, monthData) => {
     cell.style.backgroundColor = '';
@@ -427,28 +505,21 @@ const clearMultiSelection = () => {
 };
 
 const toggleCtrlSelection = (day, elCell, event) => {
+    // Pentru desktop - folosim Ctrl ca înainte
     const isCtrlKey = event.ctrlKey || event.metaKey;
 
     if (isCtrlKey) {
-        // Dacă ținem CTRL, adăugăm sau scoatem ziua din listă
         const index = selectedDays.indexOf(day);
         if (index > -1) {
             selectedDays.splice(index, 1);
             elCell.style.outline = '';
-            elCell.classList.remove('multi-selected');
         } else {
             selectedDays.push(day);
             elCell.style.outline = '3px solid #3498db';
-            elCell.classList.add('multi-selected');
         }
     } else {
-        // Dacă dăm click fără CTRL:
-        // 1. Dacă ziua pe care am dat click este DEJA în lista de selecție multiplă,
-        //    înseamnă că vrem să deschidem modalul pentru toate acele zile.
-        if (selectedDays.length > 1 && selectedDays.includes(day)) {
-            showDayModal(day, elCell);
-        } else {
-            // 2. Dacă nu era selectată, resetăm tot și deschidem doar pentru ziua asta
+        // Pentru click normal - resetăm și afișăm modalul pentru o singură zi
+        if (!isLongPressMode) {
             clearMultiSelection();
             selectedDays = [day];
             showDayModal(day, elCell);
@@ -634,23 +705,19 @@ const applyMultiPresence = (childId, type, activityIndex = null) => {
     const data = loadData();
     const key = `${year}-${month}`;
 
-    // Verificăm dacă avem zile selectate. Dacă nu, nu facem nimic.
-    if (!selectedDays || selectedDays.length === 0) return;
-
     if (type === 'kindergarten') {
         if (!data[key].days) data[key].days = {};
         if (!data[key].days[childId]) data[key].days[childId] = [];
 
-        // Verificăm dacă în toate zilele selectate copilul este deja bifat
-        const isAlreadyAllChecked = selectedDays.every(d => data[key].days[childId].includes(d));
+        const isTogglingOn = !selectedDays.every(d => data[key].days[childId].includes(d));
 
         selectedDays.forEach(d => {
             const arr = data[key].days[childId];
             const idx = arr.indexOf(d);
-            if (!isAlreadyAllChecked) {
-                if (idx === -1) arr.push(d); // Adăugăm dacă nu e deja
+            if (isTogglingOn) {
+                if (idx === -1) arr.push(d);
             } else {
-                if (idx > -1) arr.splice(idx, 1); // Scoatem dacă era deja bifat peste tot
+                if (idx > -1) arr.splice(idx, 1);
             }
         });
     } else if (type === 'extra' && activityIndex !== null) {
@@ -662,11 +729,11 @@ const applyMultiPresence = (childId, type, activityIndex = null) => {
         }
 
         const activityDays = data[key].daysExtra[childId][activityIndex];
-        const isAlreadyAllChecked = selectedDays.every(d => activityDays.includes(d));
+        const isTogglingOn = !selectedDays.every(d => activityDays.includes(d));
 
         selectedDays.forEach(d => {
             const idx = activityDays.indexOf(d);
-            if (!isAlreadyAllChecked) {
+            if (isTogglingOn) {
                 if (idx === -1) activityDays.push(d);
             } else {
                 if (idx > -1) activityDays.splice(idx, 1);
@@ -1363,14 +1430,29 @@ const shareApp = () => {
     }
 };
 
-const openDonationLink = (type) => {
-    if (type === 'buymeacoffee') {
-        window.open('https://www.buymeacoffee.com/aswy13', '_blank');
-    } else if (type === 'IBAM' || type === 'IBAN') {
-        // MODIFICĂ AICI: Pune link-ul tău RAW de pe GitHub
-        const githubIbanUrl = 'https://raw.githubusercontent.com/Aswy13/gradinita/refs/heads/main/ibam.html';
-        window.open(githubIbanUrl, '_blank');
+const showDonationModal = () => {
+    openModal('donationModal');
+};
+
+// 🔥 Functie pentru deschidere IBAN modal
+const openDonationLink = (platform) => {
+    if (platform === 'buymeacoffee') {
+        window.open('https://buymeacoffee.com/aswy', '_blank');
+        return;
     }
+
+    if (platform === 'IBAN') {
+        openModal('ibanModal');
+    }
+};
+
+// 🔥 Copy IBAN
+const copyIBAN = () => {
+    const iban = 'RO31INGB0000999901856836';
+
+    navigator.clipboard.writeText(iban).then(() => {
+        NotificationManager.show('IBAN copiat! 📋', 'success');
+    });
 };
 
 /* ================== BACKUP MANAGER ================== */

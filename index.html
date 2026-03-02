@@ -209,7 +209,7 @@
         <p>Dacă această aplicație ți-a fost utilă, poți să o sprijini pentru dezvoltarea și îmbunătățirea continuă.</p>
         <div class="donation-buttons">
             <button class="donation-btn buymeacoffee" onclick="openDonationLink('buymeacoffee')">☕ buymeacoffee</button>
-            <button class="donation-btn IBAM" onclick="openDonationLink('IBAM')">🏦 IBAM</button>
+            <button class="donation-btn IBAN" onclick="openDonationLink('IBAN')">🏦 IBAN</button>
         </div>
         <p class="donation-thanks">Mulțumim pentru sprijin! 🙏</p>
     </div>
@@ -242,5 +242,20 @@
 </div>
 
 <script src="app.js" defer></script>
+<div id="ibanModal" class="modal">
+  <div class="modal-content iban-box">
+    <h2>💖 Susține proiectul</h2>
+
+    <p><strong>Beneficiar:</strong> Numele Tau</p>
+    <p><strong>Bancă:</strong> ING Bank</p>
+
+    <div class="iban-container">
+      <span id="ibanText">RO31INGB0000999901856836</span>
+      <button onclick="copyIBAN()">📋 Copiază</button>
+    </div>
+
+    <button onclick="closeModal('ibanModal')" class="close-btn">Închide</button>
+  </div>
+</div>
 </body>
 </html>
